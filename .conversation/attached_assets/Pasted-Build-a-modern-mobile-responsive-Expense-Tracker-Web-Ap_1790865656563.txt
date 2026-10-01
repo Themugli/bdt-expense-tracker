@@ -1,0 +1,49 @@
+Build a modern, mobile-responsive Expense Tracker Web App styled cleanly with Tailwind CSS, built in React and Lucide React icons.
+
+### Key Context & Currency
+- Default Currency: Bangladeshi Taka (BDT / ৳). All monetary totals, daily logs, and charts MUST display in BDT (৳).
+- Fixed Monthly Income Allowance: ৳7,000 per month.
+- Budget Breakdown Presets (Pre-configured into the system, but editable):
+  1. Transportation: ৳4,000 / month
+  2. Subscriptions (Apple iCloud & CapCut Pro): ৳1,000 / month
+  3. Fitness / Nutrition (Protein Powder): ৳1,000 / month
+  4. Miscellaneous / Savings: ৳1,000 / month
+
+---
+
+### Core UI & Features
+
+1. Top Dashboard Header:
+   - Monthly Overview Card showing:
+     * Total Income: ৳7,000
+     * Total Spent This Month: ৳ [Dynamic Sum]
+     * Remaining Balance: ৳ [Dynamic Balance]
+   - Visual progress bar showing total budget usage percentage (color shifts from Green → Yellow → Red as expenses approach ৳7,000).
+
+2. Fast Daily Expense Logger (Quick Input Form):
+   - A super simple end-of-day entry panel.
+   - Fields: 
+     * Date Picker (Defaults to Today).
+     * Expense Amount (In ৳ BDT).
+     * Category Dropdown: Transportation, Subscriptions, Protein / Fitness, Food, Miscellaneous, or Custom.
+     * Optional Short Note / Title (e.g., "Uber to office", "CapCut subscription").
+   - "Log Expense" primary action button with instant feedback.
+
+3. Interactive Graphical Reports & Analytics:
+   - Include dynamic visual charts using Recharts:
+     * Category Breakdown Chart (Donut / Pie Chart showing expense percentages across categories like Transportation vs. Subscriptions vs. Protein).
+     * Monthly Spending Trend (Bar Chart or Area Line Chart showing day-by-day spending spikes across the month).
+   - Category Health Indicators: Show budget vs. actual progress for each individual category (e.g., Transportation budget ৳4,000 vs spent ৳2,800).
+
+4. Expense Log & Monthly Summary History:
+   - Filterable table/list showing all recent transactions for the selected month.
+   - Month Selector dropdown (e.g., October 2026, November 2026) to review past months.
+   - Quick action to delete or edit an incorrectly logged expense.
+   - Quick CSV Export button for downloading monthly expense summaries.
+
+---
+
+### Design & Experience
+- UI Style: Clean, sleek dark or light mode interface with card layouts, rounded corners, subtle glassmorphism, and clear typography.
+- Mobile First: Responsive and effortless to use on a smartphone screen at night.
+- Data Persistence: Use LocalStorage so all logged expenses, budgets, and monthly historical data stay saved across page reloads.

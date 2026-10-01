@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --font-sans: var(--app-font-sans);
+  --radius-lg: var(--radius);
+}
+
+:root {
+  --background: 43 38% 96%;
+  --foreground: 165 23% 17%;
+  --border: 155 17% 87%;
+  --input: 155 17% 87%;
+  --ring: 161 38% 42%;
+  --card: 45 48% 99%;
+  --card-foreground: 165 23% 17%;
+  --primary: 163 38% 35%;
+  --primary-foreground: 45 48% 99%;
+  --secondary: 39 47% 91%;
+  --secondary-foreground: 165 23% 17%;
+  --muted: 42 25% 92%;
+  --muted-foreground: 162 9% 46%;
+  --accent: 19 75% 62%;
+  --accent-foreground: 24 33% 15%;
+  --destructive: 4 66% 53%;
+  --destructive-foreground: 0 0% 100%;
+  --popover: 45 48% 99%;
+  --popover-foreground: 165 23% 17%;
+  --chart-1: 163 38% 35%;
+  --chart-2: 19 75% 62%;
+  --chart-3: 46 85% 65%;
+  --chart-4: 203 43% 58%;
+  --chart-5: 286 25% 64%;
+  --app-font-sans: 'DM Sans', sans-serif;
+  --app-font-serif: 'Manrope', sans-serif;
+  --app-font-mono: 'DM Sans', sans-serif;
+  --radius: 1.15rem;
+  --shadow-sm: 0 12px 30px rgba(36, 70, 57, .055);
+}
+
+.dark {
+  --background: 167 22% 11%;
+  --foreground: 44 26% 92%;
+  --border: 164 13% 25%;
+  --input: 164 13% 27%;
+  --ring: 158 39% 57%;
+  --card: 165 19% 15%;
+  --card-foreground: 44 26% 92%;
+  --primary: 158 39% 57%;
+  --primary-foreground: 165 22% 11%;
+  --secondary: 164 15% 22%;
+  --secondary-foreground: 44 26% 92%;
+  --muted: 164 15% 22%;
+  --muted-foreground: 160 10% 66%;
+  --accent: 19 71% 66%;
+  --accent-foreground: 165 22% 11%;
+  --destructive: 4 65% 58%;
+  --destructive-foreground: 0 0% 100%;
+  --popover: 165 19% 15%;
+  --popover-foreground: 44 26% 92%;
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    min-width: 320px;
+  }
+  button, input, select { font: inherit; }
+}
+
+:root { font-family: var(--app-font-sans); font-synthesis: none; }
+.font-display { font-family: var(--app-font-serif); }
+.money-page {
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse at 12% -10%, rgba(203, 221, 195, .42), transparent 34rem),
+    radial-gradient(ellipse at 100% 32%, rgba(239, 210, 175, .2), transparent 31rem),
+    hsl(var(--background));
+}
+.glass-card {
+  background: color-mix(in srgb, hsl(var(--card)) 85%, transparent);
+  border: 1px solid color-mix(in srgb, hsl(var(--border)) 82%, transparent);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(16px);
+}
+.rise-in { animation: riseIn .55s cubic-bezier(.2,.7,.2,1) both; }
+.rise-in-delay { animation: riseIn .65s cubic-bezier(.2,.7,.2,1) .12s both; }
+@keyframes riseIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+button, a, input, select { transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease, opacity .18s ease; }
+button:active { transform: scale(.98); }
+input:focus, select:focus { outline: 2px solid hsl(var(--primary) / .25); outline-offset: 1px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 10px; }

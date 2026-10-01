@@ -1,0 +1,318 @@
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import NotFound from '@/pages/not-found';
+import {
+  ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, CalendarDays, Check,
+  ChevronDown, CircleHelp, Download, Edit3, Plus, Trash2, Wallet, X,
+} from 'lucide-react';
+import {
+  Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
+  Tooltip as ChartTooltip, XAxis, YAxis,
+} from 'recharts';
+import {
+  Route,
+  Switch,
+  useLocation,
+  Router as WouterRouter,
+} from 'wouter';
+
+const queryClient = new QueryClient();
+
+type Expense = { id: string; date: string; amount: number; category: string; note: string };
+type Category = { name: string; budget: number };
+const MONTHLY_ALLOWANCE = 7000;
+const EXPENSES_KEY = 'little-ledger-expenses-v1';
+const CATEGORIES_KEY = 'little-ledger-categories-v1';
+const initialCategories: Category[] = [
+  { name: 'Transportation', budget: 4000 },
+  { name: 'Subscriptions', budget: 1000 },
+  { name: 'Protein / Fitness', budget: 1000 },
+  { name: 'Food', budget: 0 },
+  { name: 'Miscellaneous / Savings', budget: 1000 },
+];
+const categoryColors = ['#347d68', '#df8b68', '#d4ad48', '#6f9aaf', '#a088aa', '#8b9c75', '#cc7669'];
+
+function localDate(date = new Date()) {
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 10);
+}
+function monthOf(date: string) { return date.slice(0, 7); }
+function fmtMoney(value: number) {
+  return `৳${Math.round(value).toLocaleString('en-BD')}`;
+}
+function monthLabel(month: string) {
+  const [year, mm] = month.split('-').map(Number);
+  return new Date(year, mm - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+}
+function readStored<T>(key: string, fallback: T): T {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) as T : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function colorForCategory(name: string, categories: Category[]) {
+  const index = categories.findIndex((item) => item.name === name);
+  return categoryColors[Math.max(0, index) % categoryColors.length];
+}
+
+function Home() {
+  const today = localDate();
+  const [expenses, setExpenses] = useState<Expense[]>(() => readStored(EXPENSES_KEY, []));
+  const [categories, setCategories] = useState<Category[]>(() => readStored(CATEGORIES_KEY, initialCategories));
+  const [selectedMonth, setSelectedMonth] = useState(monthOf(today));
+  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(today);
+  const [category, setCategory] = useState(initialCategories[0].name);
+  const [customName, setCustomName] = useState('');
+  const [note, setNote] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  useEffect(() => { localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses)); }, [expenses]);
+  useEffect(() => { localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories)); }, [categories]);
+
+  const monthExpenses = useMemo(
+    () => expenses.filter((entry) => monthOf(entry.date) === selectedMonth).sort((a, b) => b.date.localeCompare(a.date)),
+    [expenses, selectedMonth],
+  );
+  const spent = monthExpenses.reduce((total, item) => total + item.amount, 0);
+  const remaining = MONTHLY_ALLOWANCE - spent;
+  const usage = Math.min(100, Math.round((spent / MONTHLY_ALLOWANCE) * 100));
+  const categoryTotals = useMemo(() => categories.map((item) => ({
+    ...item,
+    spent: monthExpenses.filter((entry) => entry.category === item.name).reduce((total, entry) => total + entry.amount, 0),
+  })), [categories, monthExpenses]);
+  const pieData = categoryTotals.filter((item) => item.spent > 0).map((item) => ({ name: item.name, value: item.spent }));
+  const daysInMonth = new Date(Number(selectedMonth.slice(0, 4)), Number(selectedMonth.slice(5, 7)), 0).getDate();
+  const trendData = Array.from({ length: daysInMonth }, (_, index) => {
+    const day = String(index + 1).padStart(2, '0');
+    const dayExpenses = monthExpenses.filter((item) => item.date.slice(8, 10) === day);
+    return { day: String(index + 1), amount: dayExpenses.reduce((sum, item) => sum + item.amount, 0) };
+  });
+
+  function clearForm() {
+    setAmount('');
+    setDate(today);
+    setCategory(categories[0]?.name ?? '');
+    setCustomName('');
+    setNote('');
+    setEditingId(null);
+  }
+  function submitExpense(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsedAmount = Number(amount);
+    const chosenCategory = category === '__custom__' ? customName.trim() : category;
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0 || !date || !chosenCategory) return;
+    if (!categories.some((item) => item.name === chosenCategory)) {
+      setCategories((current) => [...current, { name: chosenCategory, budget: 0 }]);
+    }
+    const updated: Expense = {
+      id: editingId ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      date, amount: parsedAmount, category: chosenCategory, note: note.trim(),
+    };
+    setExpenses((current) => editingId
+      ? current.map((item) => item.id === editingId ? updated : item)
+      : [updated, ...current]);
+    if (monthOf(date) !== selectedMonth) setSelectedMonth(monthOf(date));
+    clearForm();
+  }
+  function startEdit(expense: Expense) {
+    setEditingId(expense.id);
+    setAmount(String(expense.amount));
+    setDate(expense.date);
+    setCategory(expense.category);
+    setCustomName('');
+    setNote(expense.note);
+    document.getElementById('expense-entry')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function changeBudget(name: string, raw: string) {
+    const next = Math.max(0, Number(raw) || 0);
+    setCategories((current) => current.map((item) => item.name === name ? { ...item, budget: next } : item));
+  }
+  function shiftMonth(amountBy: number) {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const next = new Date(year, month - 1 + amountBy, 1);
+    setSelectedMonth(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`);
+  }
+  function exportCsv() {
+    const rows = [['Date', 'Amount (BDT)', 'Category', 'Note'], ...monthExpenses.map((item) => [item.date, String(item.amount), item.category, item.note])];
+    const csv = rows.map((row) => row.map((value) => `"${value.replaceAll('"', '""')}"`).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `little-ledger-${selectedMonth}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+  const balanceTone = remaining < 0 ? 'over' : usage >= 75 ? 'careful' : 'steady';
+  const chartTip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => (
+    active && payload?.length ? <div className="rounded-xl border border-[#dce5dc] bg-[#fffdf8] px-3 py-2 text-xs shadow-lg">
+      <div className="mb-1 text-[#7a8980]">{label}</div><strong className="text-[#24483c]">{fmtMoney(payload[0].value)}</strong>
+    </div> : null
+  );
+
+  return (
+    <main className="money-page min-h-[100dvh] px-4 pb-12 pt-5 sm:px-7 lg:px-10">
+      <div className="mx-auto max-w-[1180px]">
+        <header className="rise-in mb-8 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#dce9dc] text-[#347d68]"><Wallet size={21} strokeWidth={1.8} /></div>
+            <div>
+              <div className="font-display text-[19px] font-extrabold tracking-[-.045em] text-[#24483c]">little ledger<span className="text-[#d78967]">.</span></div>
+              <div className="text-[11px] font-medium tracking-[.12em] text-[#819087]">YOUR MONEY, IN PERSPECTIVE</div>
+            </div>
+          </div>
+          <div className="hidden items-center gap-2 rounded-full border border-[#dce5dc] bg-[#fbfaf5]/75 px-3 py-2 text-xs font-medium text-[#63796d] sm:flex">
+            <span className="h-2 w-2 rounded-full bg-[#5b9a76]" /> Saved only on this device
+          </div>
+        </header>
+
+        <section className="rise-in mb-6 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+          <div>
+            <p className="mb-2 text-sm font-medium text-[#789086]">A little more clarity, every day.</p>
+            <h1 className="font-display text-[32px] font-bold leading-tight tracking-[-.055em] text-[#24483c] sm:text-[42px]">Your money, <span className="text-[#d78967]">this month.</span></h1>
+          </div>
+          <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[#dce5dc] bg-[#fbfaf5]/80 p-2 sm:w-auto">
+            <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month" data-testid="button-previous-month" className="grid h-9 w-9 place-items-center rounded-xl text-[#597369] hover:bg-[#edf2e9]"><ArrowLeft size={16} /></button>
+            <label className="flex min-w-[160px] flex-1 items-center justify-center gap-2 px-1 text-sm font-semibold text-[#355a4d] sm:flex-none">
+              <CalendarDays size={16} className="text-[#789086]" />
+              <span className="sr-only">Selected month</span>
+              <input aria-label="Selected month" data-testid="input-selected-month" type="month" value={selectedMonth} onChange={(event) => event.target.value && setSelectedMonth(event.target.value)} className="w-[145px] cursor-pointer bg-transparent text-center text-sm font-semibold text-[#355a4d]" />
+            </label>
+            <button type="button" onClick={() => shiftMonth(1)} aria-label="Next month" data-testid="button-next-month" className="grid h-9 w-9 place-items-center rounded-xl text-[#597369] hover:bg-[#edf2e9]"><ArrowRight size={16} /></button>
+          </div>
+        </section>
+
+        <section className="rise-in-delay glass-card relative mb-5 overflow-hidden rounded-[26px] p-5 sm:p-7">
+          <div className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rounded-full border-[1px] border-[#dbe7d8]/80" />
+          <div className="pointer-events-none absolute -right-2 -top-10 h-44 w-44 rounded-full border-[1px] border-[#e6ebe0]" />
+          <div className="relative grid gap-7 md:grid-cols-[1.15fr_.85fr] md:items-center">
+            <div>
+              <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.12em] text-[#789086]"><span className="h-[1px] w-5 bg-[#a3b8a8]" /> Monthly allowance</div>
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <div data-testid="text-monthly-allowance" className="font-display text-[43px] font-bold leading-none tracking-[-.06em] text-[#24483c] sm:text-[54px]">{fmtMoney(MONTHLY_ALLOWANCE)}</div>
+                <div className="text-sm text-[#819087]">to make yours</div>
+              </div>
+              <div className="mt-7 flex flex-wrap gap-x-9 gap-y-4">
+                <div><div className="mb-1 text-xs text-[#819087]">Spent so far</div><div data-testid="text-monthly-spent" className="font-display text-[22px] font-bold tracking-[-.04em] text-[#355a4d]">{fmtMoney(spent)}</div></div>
+                <div><div className="mb-1 text-xs text-[#819087]">Still yours</div><div data-testid="text-monthly-remaining" className={`font-display text-[22px] font-bold tracking-[-.04em] ${remaining < 0 ? 'text-[#b8584b]' : 'text-[#347d68]'}`}>{remaining < 0 ? `−${fmtMoney(Math.abs(remaining))}` : fmtMoney(remaining)}</div></div>
+              </div>
+            </div>
+            <div className="rounded-[20px] border border-white/70 bg-white/35 p-4 sm:p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-[#446558]">Your month at a glance</span>
+                <span data-testid="text-allowance-usage" className={`rounded-full px-2.5 py-1 text-xs font-semibold ${balanceTone === 'over' ? 'bg-[#fae5df] text-[#a7463c]' : balanceTone === 'careful' ? 'bg-[#f6edcf] text-[#927629]' : 'bg-[#e1eee2] text-[#39795e]'}`}>{usage}% used</span>
+              </div>
+              <div className="h-3 overflow-hidden rounded-full bg-[#e6ebe3]">
+                <div data-testid="progress-allowance" className={`h-full rounded-full transition-[width] duration-500 ${balanceTone === 'over' ? 'bg-[#c85f51]' : balanceTone === 'careful' ? 'bg-[#d9b74f]' : 'bg-[#65a17d]'}`} style={{ width: `${usage}%` }} />
+              </div>
+              <div className="mt-2 flex justify-between text-[11px] text-[#8a9990]"><span>৳0</span><span>{remaining < 0 ? `${fmtMoney(Math.abs(remaining))} over` : `${fmtMoney(remaining)} to go`}</span><span>৳7,000</span></div>
+              <p className="mt-4 flex items-center gap-2 text-xs leading-relaxed text-[#71857a]">
+                {spent === 0 ? <CircleHelp size={14} /> : remaining < 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                {spent === 0 ? 'A fresh page. Add your first expense when you’re ready.' : remaining < 0 ? 'You’ve gone a little beyond this month’s allowance.' : `${fmtMoney(remaining)} is still available for the rest of your month.`}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <div className="mb-5 grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
+          <section id="expense-entry" className="glass-card rounded-[24px] p-5 sm:p-6">
+            <div className="mb-5 flex items-start justify-between">
+              <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">{editingId ? 'Make a change' : 'A small note to self'}</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">{editingId ? 'Edit expense' : 'What did you spend?'}</h2></div>
+              {editingId && <button type="button" aria-label="Cancel edit" data-testid="button-cancel-edit" onClick={clearForm} className="grid h-8 w-8 place-items-center rounded-full text-[#768980] hover:bg-[#edf1e8]"><X size={17} /></button>}
+            </div>
+            <form onSubmit={submitExpense} className="space-y-3">
+              <div className="grid grid-cols-[1fr_1.05fr] gap-3">
+                <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Amount</span><div className="flex h-11 items-center rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 focus-within:border-[#84a998]"><span className="mr-2 text-sm font-semibold text-[#779284]">৳</span><input aria-label="Amount in BDT" data-testid="input-expense-amount" type="number" min="0.01" step="0.01" required value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0.00" className="w-full bg-transparent text-sm font-semibold text-[#315548] outline-none placeholder:font-normal placeholder:text-[#b7c0b9]" /></div></label>
+                <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Date</span><input aria-label="Expense date" data-testid="input-expense-date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]" /></label>
+              </div>
+              <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Where it belongs</span><span className="relative block"><select aria-label="Expense category" data-testid="select-expense-category" value={category} onChange={(event) => setCategory(event.target.value)} required className="h-11 w-full appearance-none rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 pr-9 text-sm text-[#4d6c5e]">{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}<option value="__custom__">+ Create a category</option></select><ChevronDown size={15} className="pointer-events-none absolute right-3 top-3.5 text-[#82958a]" /></span></label>
+              {category === '__custom__' && <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Category name</span><input aria-label="Custom category name" data-testid="input-custom-category" required value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="Give it a name" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>}
+              <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">A note <span className="font-normal">(optional)</span></span><input aria-label="Optional note" data-testid="input-expense-note" maxLength={80} value={note} onChange={(event) => setNote(event.target.value)} placeholder="A quick detail to remember" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
+              <button type="submit" data-testid="button-save-expense" className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-semibold text-white shadow-sm hover:bg-[#2d705d]">{editingId ? <Check size={16} /> : <Plus size={17} />}{editingId ? 'Save changes' : 'Add to my ledger'}</button>
+            </form>
+          </section>
+
+          <section className="glass-card rounded-[24px] p-5 sm:p-6">
+            <div className="mb-4 flex items-end justify-between"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The shape of your spending</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Where it went</h2></div><span className="text-xs text-[#8a9990]">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'}</span></div>
+            {pieData.length ? <div className="grid items-center gap-3 sm:grid-cols-[.9fr_1.1fr]">
+              <div className="relative h-[190px] w-full">
+                <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={pieData} dataKey="value" nameKey="name" innerRadius={58} outerRadius={82} paddingAngle={3} stroke="none" cornerRadius={4}>{pieData.map((entry) => <Cell key={entry.name} fill={colorForCategory(entry.name, categories)} />)}</Pie><ChartTooltip content={chartTip} /></PieChart></ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"><strong data-testid="text-category-spend-total" className="font-display text-[19px] font-bold text-[#315548]">{fmtMoney(spent)}</strong><span className="text-[10px] text-[#8a9990]">total spent</span></div>
+              </div>
+              <div className="space-y-3">{pieData.map((item) => <div key={item.name} className="flex items-center justify-between gap-2"><div className="flex min-w-0 items-center gap-2"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: colorForCategory(item.name, categories) }} /><span className="truncate text-xs text-[#62796d]">{item.name}</span></div><span data-testid={`text-donut-amount-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="shrink-0 text-xs font-semibold text-[#355a4d]">{fmtMoney(item.value)}</span></div>)}</div>
+            </div> : <div className="flex min-h-[190px] flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/70 text-center"><div className="mb-3 grid h-11 w-11 place-items-center rounded-full bg-[#e7eee4] text-[#668b75]"><Wallet size={19} /></div><p className="text-sm font-semibold text-[#547165]">Nothing spent just yet</p><p className="mt-1 max-w-[220px] text-xs leading-relaxed text-[#8a9990]">Your categories will take shape here as you add expenses.</p></div>}
+          </section>
+        </div>
+
+        <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-2"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">One day at a time</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Daily rhythm</h2></div><div className="flex items-center gap-2 text-[11px] text-[#7e9287]"><span className="h-2 w-2 rounded-full bg-[#4d9275]" />Daily spend · BDT</div></div>
+          <div className="h-[205px] w-full">
+            {monthExpenses.length ? <ResponsiveContainer width="100%" height="100%"><AreaChart data={trendData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}><defs><linearGradient id="spendFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#559778" stopOpacity={.25} /><stop offset="100%" stopColor="#559778" stopOpacity={.015} /></linearGradient></defs><CartesianGrid vertical={false} stroke="#e8ede5" strokeDasharray="3 5" /><XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#87968c' }} interval={Math.max(0, Math.floor(daysInMonth / 9) - 1)} tickFormatter={(value) => `${value}`} /><YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#87968c' }} width={52} tickFormatter={(value) => value >= 1000 ? `৳${(value / 1000).toFixed(value % 1000 ? 1 : 0)}k` : `৳${value}`} /><ChartTooltip content={chartTip} /><Area type="monotone" dataKey="amount" stroke="#4d9275" strokeWidth={2.5} fill="url(#spendFill)" activeDot={{ r: 4, fill: '#4d9275', stroke: '#f9f8f1', strokeWidth: 2 }} /></AreaChart></ResponsiveContainer> : <div className="flex h-full flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/70"><p className="text-sm font-semibold text-[#547165]">Your rhythm will appear here</p><p className="mt-1 text-xs text-[#8a9990]">Log a few days of spending to see the pattern.</p></div>}
+          </div>
+        </section>
+
+        <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">A gentle check-in</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Category budgets</h2></div><p className="text-xs text-[#87968c]">Adjust any amount to suit your month</p></div>
+          <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+            {categoryTotals.map((item) => {
+              const ratio = item.budget > 0 ? item.spent / item.budget : item.spent > 0 ? 1 : 0;
+              const barColor = ratio >= 1 ? '#c66655' : ratio >= .75 ? '#d4aa46' : '#62a07b';
+              return <div key={item.name} className="rounded-2xl border border-[#e4e9e1] bg-[#fffdf8]/45 p-4" data-testid={`budget-row-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                <div className="mb-3 flex items-start justify-between gap-2"><div className="min-w-0"><div className="truncate text-sm font-semibold text-[#416356]">{item.name}</div><div className="mt-1 text-[11px] text-[#87968c]">{item.budget === 0 && item.spent === 0 ? 'No budget set' : item.budget === 0 ? `${fmtMoney(item.spent)} spent · no budget` : `${fmtMoney(item.spent)} spent`}</div></div>
+                  <label className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#f0f2eb] px-2 py-1.5 text-[11px] text-[#87968c]"><span>Budget</span><span className="font-semibold text-[#547165]">৳</span><input aria-label={`${item.name} monthly budget in BDT`} data-testid={`input-budget-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} type="number" min="0" step="50" value={item.budget} onChange={(event) => changeBudget(item.name, event.target.value)} className="w-[66px] bg-transparent text-right text-xs font-semibold text-[#416356] outline-none" /></label>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-[#e8ece4]"><div data-testid={`progress-budget-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="h-full rounded-full transition-[width] duration-500" style={{ width: `${item.budget > 0 ? Math.min(100, ratio * 100) : item.spent > 0 ? 100 : 0}%`, backgroundColor: barColor }} /></div>
+                <div className="mt-2 flex justify-between text-[10px] text-[#91a096]"><span>{item.budget > 0 ? `${Math.round(ratio * 100)}% of budget` : 'Spending tracked'}</span><span>{item.budget > 0 ? `${fmtMoney(Math.max(item.budget - item.spent, 0))} left` : 'Set budget above'}</span></div>
+              </div>;
+            })}
+          </div>
+        </section>
+
+        <section className="glass-card rounded-[24px] p-5 sm:p-6">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The little details</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Your ledger</h2></div><button type="button" onClick={exportCsv} data-testid="button-export-csv" className="flex h-9 items-center gap-2 rounded-xl border border-[#dce5dc] bg-[#fffdf8]/70 px-3 text-xs font-semibold text-[#537364] hover:bg-[#edf2e9]"><Download size={14} />Download CSV</button></div>
+          {monthExpenses.length ? <div className="overflow-x-auto"><table className="w-full min-w-[520px] border-collapse text-left"><thead><tr className="border-b border-[#e6ebe3] text-[10px] font-semibold uppercase tracking-[.1em] text-[#95a198]"><th className="pb-3 pr-3 font-semibold">Date</th><th className="pb-3 pr-3 font-semibold">Category</th><th className="pb-3 pr-3 font-semibold">Note</th><th className="pb-3 pr-3 text-right font-semibold">Amount</th><th className="pb-3 text-right font-semibold">Edit</th></tr></thead><tbody>{monthExpenses.map((item) => <tr key={item.id} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] last:border-0 hover:bg-[#f7f7f0]/65"><td data-testid={`text-expense-date-${item.id}`} className="py-3.5 pr-3 text-xs text-[#74877d]">{new Date(`${item.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td><td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-[#4d6c5e]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td><td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td><td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td><td className="py-3.5 text-right"><div className="flex justify-end gap-1"><button type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></button><button type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => { if (window.confirm('Delete this expense from your ledger?')) setExpenses((current) => current.filter((entry) => entry.id !== item.id)); }} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></button></div></td></tr>)}</tbody></table></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
+          <div className="mt-4 flex items-center justify-between border-t border-[#e6ebe3] pt-4 text-xs"><span className="text-[#839289]">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'} in {monthLabel(selectedMonth)}</span><span className="font-semibold text-[#426457]">Month total <strong data-testid="text-ledger-total" className="ml-2 font-display text-sm">{fmtMoney(spent)}</strong></span></div>
+        </section>
+        <footer className="flex items-center justify-center gap-2 py-7 text-[11px] text-[#93a097]"><span>Just for you</span><span className="h-1 w-1 rounded-full bg-[#d78967]" /><span>Your numbers never leave this device</span></footer>
+      </div>
+    </main>
+  );
+}
+
+function Router() {
+  return (
+    // Keep a shared shell (sidebar, navbar) outside the boundary so it
+    // survives a page crash.
+    <RoutedErrorBoundary>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route component={NotFound} />
+      </Switch>
+    </RoutedErrorBoundary>
+  );
+}
+
+function RoutedErrorBoundary({ children }: { children: ReactNode }) {
+  const [location] = useLocation();
+  return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <Router />
+        </WouterRouter>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
