@@ -9,7 +9,7 @@ import {
   ChevronDown, CircleHelp, Download, Edit3, Plus, Trash2, Wallet, X,
 } from 'lucide-react';
 import {
-  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
+  Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
   Tooltip as ChartTooltip, XAxis, YAxis,
 } from 'recharts';
 import {
@@ -21,7 +21,7 @@ import {
 
 const queryClient = new QueryClient();
 
-type Expense = { id: string; date: string; amount: number; category: string; note: string; tags: string[] };
+type Expense = { id: string; date: string; amount: number; category: string; note: string; tags?: string[] };
 type Category = { name: string; budget: number };
 const DEFAULT_MONTHLY_INCOME = 7000;
 const EXPENSES_KEY = 'little-ledger-expenses-v1';
@@ -69,7 +69,6 @@ function loadExpenses() {
   return readStored<Expense[]>(EXPENSES_KEY, []).map((item) => ({
     ...item,
     category: normalizeCategoryName(item.category),
-    tags: Array.isArray(item.tags) ? item.tags : [],
   }));
 }
 function loadCategories() {
@@ -89,19 +88,6 @@ function loadCategories() {
   const custom = [...normalized.values()].filter((item) => !defaultNames.has(item.name));
   return [...defaults, ...custom];
 }
-function parseTags(value: string) {
-  const tags: string[] = [];
-  const seen = new Set<string>();
-  for (const part of value.split(/[\s,;]+/)) {
-    const tag = part.trim().replace(/^#+/, '').replace(/[,:;]+$/, '').slice(0, 32);
-    const key = tag.toLocaleLowerCase();
-    if (tag && !seen.has(key) && tags.length < 12) {
-      tags.push(tag);
-      seen.add(key);
-    }
-  }
-  return tags;
-}
 function colorForCategory(name: string, categories: Category[]) {
   const index = categories.findIndex((item) => item.name === name);
   return categoryColors[Math.max(0, index) % categoryColors.length];
@@ -120,13 +106,12 @@ function Home() {
   const [date, setDate] = useState(today);
   const [category, setCategory] = useState(initialCategories[0].name);
   const [customName, setCustomName] = useState('');
-  const [tagInput, setTagInput] = useState('');
+  const [customCategoryMode, setCustomCategoryMode] = useState(false);
   const [note, setNote] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingIncome, setEditingIncome] = useState(false);
   const [incomeDraft, setIncomeDraft] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [tagFilter, setTagFilter] = useState('all');
 
   useEffect(() => { localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses)); }, [expenses]);
   useEffect(() => { localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories)); }, [categories]);
@@ -149,26 +134,11 @@ function Home() {
     spent: monthExpenses.filter((entry) => entry.category === item.name).reduce((total, entry) => total + entry.amount, 0),
   })), [categories, monthExpenses]);
   const pieData = categoryTotals.filter((item) => item.spent > 0).map((item) => ({ name: item.name, value: item.spent }));
-  const tagData = useMemo(() => {
-    const totals = new Map<string, number>();
-    for (const expense of monthExpenses) {
-      for (const tag of expense.tags) totals.set(tag, (totals.get(tag) ?? 0) + expense.amount);
-    }
-    return [...totals.entries()]
-      .map(([tag, value]) => ({ tag, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
-  }, [monthExpenses]);
-  const availableTags = useMemo(
-    () => [...new Set(expenses.flatMap((expense) => expense.tags))].sort((a, b) => a.localeCompare(b)),
-    [expenses],
-  );
   const filteredExpenses = useMemo(
     () => monthExpenses.filter((expense) =>
-      (categoryFilter === 'all' || expense.category === categoryFilter) &&
-      (tagFilter === 'all' || expense.tags.includes(tagFilter)),
+      categoryFilter === 'all' || expense.category === categoryFilter,
     ),
-    [monthExpenses, categoryFilter, tagFilter],
+    [monthExpenses, categoryFilter],
   );
   const daysInMonth = new Date(Number(selectedMonth.slice(0, 4)), Number(selectedMonth.slice(5, 7)), 0).getDate();
   const trendData = Array.from({ length: daysInMonth }, (_, index) => {
@@ -182,24 +152,25 @@ function Home() {
     setDate(today);
     setCategory(categories[0]?.name ?? '');
     setCustomName('');
-    setTagInput('');
+    setCustomCategoryMode(false);
     setNote('');
     setEditingId(null);
   }
   function submitExpense(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsedAmount = Number(amount);
-    const chosenCategory = category === '__custom__' ? customName.trim() : category;
+    const typedCategory = customCategoryMode ? customName.trim() : category;
+    const chosenCategory = categories.find((item) => item.name.toLocaleLowerCase() === typedCategory.toLocaleLowerCase())?.name ?? typedCategory;
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0 || !date || !chosenCategory) return;
     if (!categories.some((item) => item.name === chosenCategory)) {
       setCategories((current) => [...current, { name: chosenCategory, budget: 0 }]);
     }
     const updated: Expense = {
       id: editingId ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      date, amount: parsedAmount, category: chosenCategory, note: note.trim(), tags: parseTags(tagInput),
+      date, amount: parsedAmount, category: chosenCategory, note: note.trim(),
     };
     setExpenses((current) => editingId
-      ? current.map((item) => item.id === editingId ? updated : item)
+      ? current.map((item) => item.id === editingId ? { ...updated, ...(item.tags ? { tags: item.tags } : {}) } : item)
       : [updated, ...current]);
     if (monthOf(date) !== selectedMonth) setSelectedMonth(monthOf(date));
     clearForm();
@@ -210,7 +181,7 @@ function Home() {
     setDate(expense.date);
     setCategory(expense.category);
     setCustomName('');
-    setTagInput(expense.tags.map((tag) => `#${tag}`).join(', '));
+    setCustomCategoryMode(false);
     setNote(expense.note);
     document.getElementById('expense-entry')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
@@ -231,7 +202,7 @@ function Home() {
     setSelectedMonth(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`);
   }
   function exportCsv() {
-    const rows = [['Date', 'Amount (BDT)', 'Category', 'Tags', 'Note'], ...monthExpenses.map((item) => [item.date, String(item.amount), item.category, item.tags.map((tag) => `#${tag}`).join(' '), item.note])];
+    const rows = [['Date', 'Amount (BDT)', 'Category', 'Note'], ...monthExpenses.map((item) => [item.date, String(item.amount), item.category, item.note])];
     const csv = rows.map((row) => row.map((value) => `"${value.replaceAll('"', '""')}"`).join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const link = document.createElement('a');
@@ -330,9 +301,13 @@ function Home() {
                 <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Amount</span><div className="flex h-11 items-center rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 focus-within:border-[#84a998]"><span className="mr-2 text-sm font-semibold text-[#779284]">৳</span><input aria-label="Amount in BDT" data-testid="input-expense-amount" type="number" min="0.01" step="0.01" required value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0.00" className="w-full bg-transparent text-sm font-semibold text-[#315548] outline-none placeholder:font-normal placeholder:text-[#b7c0b9]" /></div></label>
                 <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Date</span><input aria-label="Expense date" data-testid="input-expense-date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]" /></label>
               </div>
-              <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Where it belongs</span><span className="relative block"><select aria-label="Expense category" data-testid="select-expense-category" value={category} onChange={(event) => setCategory(event.target.value)} required className="h-11 w-full appearance-none rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 pr-9 text-sm text-[#4d6c5e]">{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}<option value="__custom__">+ Create a category</option></select><ChevronDown size={15} className="pointer-events-none absolute right-3 top-3.5 text-[#82958a]" /></span></label>
-              {category === '__custom__' && <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Category name</span><input aria-label="Custom category name" data-testid="input-custom-category" required value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="Give it a name" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>}
-              <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Tags <span className="font-normal">(optional, separate with commas or spaces)</span></span><input aria-label="Custom expense tags" data-testid="input-expense-tags" maxLength={240} value={tagInput} onChange={(event) => setTagInput(event.target.value)} placeholder="#iCloud, #CapCut, #Uber" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
+              {!customCategoryMode ? <div>
+                <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Where it belongs</span><span className="relative block"><select aria-label="Expense category" data-testid="select-expense-category" value={category} onChange={(event) => setCategory(event.target.value)} required className="h-11 w-full appearance-none rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 pr-9 text-sm text-[#4d6c5e]">{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select><ChevronDown size={15} className="pointer-events-none absolute right-3 top-3.5 text-[#82958a]" /></span></label>
+                <button type="button" data-testid="button-add-custom-category" onClick={() => { setCustomName(''); setCustomCategoryMode(true); }} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-[#347d68] hover:bg-[#edf2e9]"><Plus size={14} />Add a custom category</button>
+              </div> : <div className="rounded-xl border border-[#dce5dc] bg-[#fffdf8]/50 p-3">
+                <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">New “Where it belongs” category</span><input aria-label="Custom category name" data-testid="input-custom-category" maxLength={40} required autoFocus value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="For example, Books or Gifts" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
+                <div className="mt-2 flex items-center justify-between gap-2"><p className="text-[10px] text-[#87968c]">Saved when you add this expense.</p><button type="button" data-testid="button-use-existing-category" onClick={() => { setCustomCategoryMode(false); setCustomName(''); }} className="rounded-lg px-2 py-1 text-[11px] font-semibold text-[#628675] hover:bg-[#edf2e9]">Choose existing</button></div>
+              </div>}
               <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">A note <span className="font-normal">(optional)</span></span><input aria-label="Optional note" data-testid="input-expense-note" maxLength={80} value={note} onChange={(event) => setNote(event.target.value)} placeholder="A quick detail to remember" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
               <button type="submit" data-testid="button-save-expense" className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-semibold text-white shadow-sm hover:bg-[#2d705d]">{editingId ? <Check size={16} /> : <Plus size={17} />}{editingId ? 'Save changes' : 'Add to my ledger'}</button>
             </form>
@@ -358,35 +333,6 @@ function Home() {
         </section>
 
         <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6">
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-            <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Follow the little labels</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Top spending tags</h2></div>
-            <p className="text-[11px] text-[#87968c]">Tagged expenses can appear under more than one tag.</p>
-          </div>
-          {tagData.length ? <div className="grid items-center gap-4 md:grid-cols-[1.25fr_.75fr]">
-            <div className="h-[230px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={tagData} layout="vertical" margin={{ top: 4, right: 18, left: 4, bottom: 4 }}>
-                  <CartesianGrid horizontal={false} stroke="#e8ede5" strokeDasharray="3 5" />
-                  <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#87968c' }} tickFormatter={(value) => value >= 1000 ? `৳${(value / 1000).toFixed(value % 1000 ? 1 : 0)}k` : `৳${value}`} />
-                  <YAxis type="category" dataKey="tag" width={94} tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#62796d' }} tickFormatter={(value) => `#${value}`} />
-                  <ChartTooltip content={chartTip} />
-                  <Bar dataKey="value" fill="#559778" radius={[0, 7, 7, 0]} maxBarSize={24} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-2">
-              {tagData.map((item) => <div key={item.tag} data-testid={`row-tag-total-${item.tag.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="flex items-center justify-between gap-3 rounded-xl bg-[#f4f5ef]/75 px-3 py-2">
-                <span className="truncate text-xs font-medium text-[#62796d]">#{item.tag}</span>
-                <span className="shrink-0 text-xs font-semibold text-[#355a4d]">{fmtMoney(item.value)}</span>
-              </div>)}
-            </div>
-          </div> : <div className="flex min-h-[130px] flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/70 text-center">
-            <p className="text-sm font-semibold text-[#547165]">No tags in this month yet</p>
-            <p className="mt-1 text-xs text-[#8a9990]">Add tags to expenses to see what they’re adding up to.</p>
-          </div>}
-        </section>
-
-        <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">A gentle check-in</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Category budgets</h2></div><p className="text-xs text-[#87968c]">Adjust any amount to suit your month</p></div>
           <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
             {categoryTotals.map((item) => {
@@ -407,9 +353,8 @@ function Home() {
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The little details</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Your ledger</h2></div><button type="button" onClick={exportCsv} data-testid="button-export-csv" className="flex h-9 items-center gap-2 rounded-xl border border-[#dce5dc] bg-[#fffdf8]/70 px-3 text-xs font-semibold text-[#537364] hover:bg-[#edf2e9]"><Download size={14} />Download CSV</button></div>
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
             <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by category</span><select aria-label="Filter expenses by category" data-testid="select-filter-category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]"><option value="all">All categories</option>{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label>
-            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by tag</span><select aria-label="Filter expenses by tag" data-testid="select-filter-tag" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]"><option value="all">All tags</option>{availableTags.map((item) => <option key={item} value={item}>#{item}</option>)}</select></label>
           </div>
-          {monthExpenses.length ? filteredExpenses.length ? <div className="overflow-x-auto"><table className="w-full min-w-[680px] border-collapse text-left"><thead><tr className="border-b border-[#e6ebe3] text-[10px] font-semibold uppercase tracking-[.1em] text-[#95a198]"><th className="pb-3 pr-3 font-semibold">Date</th><th className="pb-3 pr-3 font-semibold">Category</th><th className="pb-3 pr-3 font-semibold">Tags</th><th className="pb-3 pr-3 font-semibold">Note</th><th className="pb-3 pr-3 text-right font-semibold">Amount</th><th className="pb-3 text-right font-semibold">Edit</th></tr></thead><tbody>{filteredExpenses.map((item) => <tr key={item.id} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] last:border-0 hover:bg-[#f7f7f0]/65"><td data-testid={`text-expense-date-${item.id}`} className="py-3.5 pr-3 text-xs text-[#74877d]">{new Date(`${item.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td><td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-[#4d6c5e]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td><td data-testid={`text-expense-tags-${item.id}`} className="py-3.5 pr-3"><div className="flex max-w-[170px] flex-wrap gap-1">{item.tags.length ? item.tags.map((tag) => <span key={tag} className="rounded-md bg-[#edf2e9] px-1.5 py-1 text-[10px] text-[#628675]">#{tag}</span>) : <span className="text-xs text-[#93a097]">—</span>}</div></td><td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td><td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td><td className="py-3.5 text-right"><div className="flex justify-end gap-1"><button type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></button><button type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => { if (window.confirm('Delete this expense from your ledger?')) setExpenses((current) => current.filter((entry) => entry.id !== item.id)); }} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></button></div></td></tr>)}</tbody></table></div> : <div className="rounded-2xl bg-[#f4f4ec]/65 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165]">No expenses match those filters</p><p className="mt-1 text-xs text-[#8a9990]">Try another category or tag.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
+          {monthExpenses.length ? filteredExpenses.length ? <div className="overflow-x-auto"><table className="w-full min-w-[580px] border-collapse text-left"><thead><tr className="border-b border-[#e6ebe3] text-[10px] font-semibold uppercase tracking-[.1em] text-[#95a198]"><th className="pb-3 pr-3 font-semibold">Date</th><th className="pb-3 pr-3 font-semibold">Category</th><th className="pb-3 pr-3 font-semibold">Note</th><th className="pb-3 pr-3 text-right font-semibold">Amount</th><th className="pb-3 text-right font-semibold">Edit</th></tr></thead><tbody>{filteredExpenses.map((item) => <tr key={item.id} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] last:border-0 hover:bg-[#f7f7f0]/65"><td data-testid={`text-expense-date-${item.id}`} className="py-3.5 pr-3 text-xs text-[#74877d]">{new Date(`${item.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td><td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-[#4d6c5e]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td><td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td><td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td><td className="py-3.5 text-right"><div className="flex justify-end gap-1"><button type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></button><button type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => { if (window.confirm('Delete this expense from your ledger?')) setExpenses((current) => current.filter((entry) => entry.id !== item.id)); }} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></button></div></td></tr>)}</tbody></table></div> : <div className="rounded-2xl bg-[#f4f4ec]/65 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165]">No expenses match that category</p><p className="mt-1 text-xs text-[#8a9990]">Try another category.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
           <div className="mt-4 flex items-center justify-between border-t border-[#e6ebe3] pt-4 text-xs"><span className="text-[#839289]">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'} in {monthLabel(selectedMonth)}</span><span className="font-semibold text-[#426457]">Month total <strong data-testid="text-ledger-total" className="ml-2 font-display text-sm">{fmtMoney(spent)}</strong></span></div>
         </section>
         <footer className="flex items-center justify-center gap-2 py-7 text-[11px] text-[#93a097]"><span>Just for you</span><span className="h-1 w-1 rounded-full bg-[#d78967]" /><span>Your numbers never leave this device</span></footer>
