@@ -5,11 +5,11 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import {
-  ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, CalendarDays, Check,
+  ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, CalendarDays, Check,
   ChevronDown, CircleHelp, Download, Edit3, Plus, Trash2, Wallet, X,
 } from 'lucide-react';
 import {
-  Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
+  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer,
   Tooltip as ChartTooltip, XAxis, YAxis,
 } from 'recharts';
 import {
@@ -21,7 +21,7 @@ import {
 
 const queryClient = new QueryClient();
 
-type Expense = { id: string; date: string; amount: number; category: string; note: string; tags?: string[] };
+type Expense = { id: string; date: string; amount: number; category: string; note: string; tags: string[] };
 type Category = { name: string; budget: number };
 const DEFAULT_MONTHLY_INCOME = 7000;
 const EXPENSES_KEY = 'little-ledger-expenses-v1';
@@ -69,6 +69,7 @@ function loadExpenses() {
   return readStored<Expense[]>(EXPENSES_KEY, []).map((item) => ({
     ...item,
     category: normalizeCategoryName(item.category),
+    tags: Array.isArray(item.tags) ? item.tags : [],
   }));
 }
 function loadCategories() {
@@ -88,6 +89,19 @@ function loadCategories() {
   const custom = [...normalized.values()].filter((item) => !defaultNames.has(item.name));
   return [...defaults, ...custom];
 }
+function parseTags(value: string) {
+  const tags: string[] = [];
+  const seen = new Set<string>();
+  for (const part of value.split(/[\s,;]+/)) {
+    const tag = part.trim().replace(/^#+/, '').replace(/[,:;]+$/, '').slice(0, 32);
+    const key = tag.toLocaleLowerCase();
+    if (tag && !seen.has(key) && tags.length < 12) {
+      tags.push(tag);
+      seen.add(key);
+    }
+  }
+  return tags;
+}
 function colorForCategory(name: string, categories: Category[]) {
   const index = categories.findIndex((item) => item.name === name);
   return categoryColors[Math.max(0, index) % categoryColors.length];
@@ -101,26 +115,76 @@ function Home() {
     const saved = readStored(INCOME_KEY, DEFAULT_MONTHLY_INCOME);
     return Number.isFinite(saved) && saved >= 0 ? saved : DEFAULT_MONTHLY_INCOME;
   });
+  const [activeTab, setActiveTab] = useState<'monthly' | 'yearly'>('monthly');
   const [selectedMonth, setSelectedMonth] = useState(monthOf(today));
+  const [selectedYear, setSelectedYear] = useState(Number(today.slice(0, 4)));
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(today);
   const [category, setCategory] = useState(initialCategories[0].name);
   const [customName, setCustomName] = useState('');
   const [customCategoryMode, setCustomCategoryMode] = useState(false);
+  const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingIncome, setEditingIncome] = useState(false);
   const [incomeDraft, setIncomeDraft] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
 
   useEffect(() => { localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses)); }, [expenses]);
   useEffect(() => { localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories)); }, [categories]);
   useEffect(() => { localStorage.setItem(INCOME_KEY, JSON.stringify(monthlyIncome)); }, [monthlyIncome]);
+  useEffect(() => { setCategoryFilter('all'); setTagFilter('all'); }, [selectedMonth]);
 
   const monthExpenses = useMemo(
     () => expenses.filter((entry) => monthOf(entry.date) === selectedMonth).sort((a, b) => b.date.localeCompare(a.date)),
     [expenses, selectedMonth],
   );
+  const monthTabs = useMemo(() => [...new Set(expenses.map((entry) => monthOf(entry.date)))].sort((a, b) => b.localeCompare(a)), [expenses]);
+  const monthEntryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const expense of expenses) counts.set(monthOf(expense.date), (counts.get(monthOf(expense.date)) ?? 0) + 1);
+    return counts;
+  }, [expenses]);
+  const availableYears = useMemo(
+    () => [...new Set([Number(today.slice(0, 4)), ...expenses.map((entry) => Number(entry.date.slice(0, 4)))])].sort((a, b) => b - a),
+    [expenses, today],
+  );
+  const yearlyMonthData = useMemo(() => {
+    const byMonth = new Map<string, number>();
+    for (const expense of expenses) {
+      if (Number(expense.date.slice(0, 4)) !== selectedYear) continue;
+      const month = monthOf(expense.date);
+      byMonth.set(month, (byMonth.get(month) ?? 0) + expense.amount);
+    }
+    return [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([month, spent]) => {
+      const [, monthNumber] = month.split('-').map(Number);
+      return {
+        month,
+        label: monthLabel(month),
+        shortLabel: new Date(selectedYear, monthNumber - 1, 1).toLocaleDateString('en-GB', { month: 'short' }),
+        spent,
+        income: monthlyIncome,
+      };
+    });
+  }, [expenses, selectedYear, monthlyIncome]);
+  const insightMonthData = useMemo(() => {
+    const currentYear = Number(today.slice(0, 4));
+    const totals = new Map<string, number>();
+    for (const expense of expenses) {
+      const expenseYear = Number(expense.date.slice(0, 4));
+      if (expenseYear !== selectedYear || (selectedYear >= currentYear && expense.date > today)) continue;
+      const month = monthOf(expense.date);
+      totals.set(month, (totals.get(month) ?? 0) + expense.amount);
+    }
+    return [...totals.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([month, spent]) => ({ month, label: monthLabel(month), spent }));
+  }, [expenses, selectedYear, today]);
+  const yearTotal = insightMonthData.reduce((total, item) => total + item.spent, 0);
+  const peakMonth = insightMonthData.reduce<(typeof insightMonthData)[number] | null>(
+    (peak, item) => !peak || item.spent > peak.spent ? item : peak,
+    null,
+  );
+  const monthlyAverage = insightMonthData.length ? yearTotal / insightMonthData.length : 0;
   const spent = monthExpenses.reduce((total, item) => total + item.amount, 0);
   const draftIncomeNumber = Number(incomeDraft);
   const activeIncome = editingIncome && incomeDraft.trim() !== '' && Number.isFinite(draftIncomeNumber) && draftIncomeNumber >= 0
@@ -134,11 +198,23 @@ function Home() {
     spent: monthExpenses.filter((entry) => entry.category === item.name).reduce((total, entry) => total + entry.amount, 0),
   })), [categories, monthExpenses]);
   const pieData = categoryTotals.filter((item) => item.spent > 0).map((item) => ({ name: item.name, value: item.spent }));
+  const tagData = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const expense of monthExpenses) {
+      for (const tag of expense.tags) totals.set(tag, (totals.get(tag) ?? 0) + expense.amount);
+    }
+    return [...totals.entries()].map(([tag, value]) => ({ tag, value })).sort((a, b) => b.value - a.value).slice(0, 8);
+  }, [monthExpenses]);
+  const availableTags = useMemo(
+    () => [...new Set(monthExpenses.flatMap((expense) => expense.tags))].sort((a, b) => a.localeCompare(b)),
+    [monthExpenses],
+  );
   const filteredExpenses = useMemo(
     () => monthExpenses.filter((expense) =>
-      categoryFilter === 'all' || expense.category === categoryFilter,
+      (categoryFilter === 'all' || expense.category === categoryFilter) &&
+      (tagFilter === 'all' || expense.tags.includes(tagFilter)),
     ),
-    [monthExpenses, categoryFilter],
+    [monthExpenses, categoryFilter, tagFilter],
   );
   const daysInMonth = new Date(Number(selectedMonth.slice(0, 4)), Number(selectedMonth.slice(5, 7)), 0).getDate();
   const trendData = Array.from({ length: daysInMonth }, (_, index) => {
@@ -153,6 +229,7 @@ function Home() {
     setCategory(categories[0]?.name ?? '');
     setCustomName('');
     setCustomCategoryMode(false);
+    setTagInput('');
     setNote('');
     setEditingId(null);
   }
@@ -167,12 +244,13 @@ function Home() {
     }
     const updated: Expense = {
       id: editingId ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      date, amount: parsedAmount, category: chosenCategory, note: note.trim(),
+      date, amount: parsedAmount, category: chosenCategory, note: note.trim(), tags: parseTags(tagInput),
     };
     setExpenses((current) => editingId
-      ? current.map((item) => item.id === editingId ? { ...updated, ...(item.tags ? { tags: item.tags } : {}) } : item)
+      ? current.map((item) => item.id === editingId ? updated : item)
       : [updated, ...current]);
     if (monthOf(date) !== selectedMonth) setSelectedMonth(monthOf(date));
+    setSelectedYear(Number(date.slice(0, 4)));
     clearForm();
   }
   function startEdit(expense: Expense) {
@@ -182,6 +260,7 @@ function Home() {
     setCategory(expense.category);
     setCustomName('');
     setCustomCategoryMode(false);
+    setTagInput(expense.tags.map((tag) => `#${tag}`).join(', '));
     setNote(expense.note);
     document.getElementById('expense-entry')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
@@ -199,10 +278,12 @@ function Home() {
   function shiftMonth(amountBy: number) {
     const [year, month] = selectedMonth.split('-').map(Number);
     const next = new Date(year, month - 1 + amountBy, 1);
-    setSelectedMonth(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`);
+    const nextMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+    setSelectedMonth(nextMonth);
+    setSelectedYear(next.getFullYear());
   }
   function exportCsv() {
-    const rows = [['Date', 'Amount (BDT)', 'Category', 'Note'], ...monthExpenses.map((item) => [item.date, String(item.amount), item.category, item.note])];
+    const rows = [['Date', 'Amount (BDT)', 'Category', 'Tags', 'Note'], ...monthExpenses.map((item) => [item.date, String(item.amount), item.category, item.tags.map((tag) => `#${tag}`).join(' '), item.note])];
     const csv = rows.map((row) => row.map((value) => `"${value.replaceAll('"', '""')}"`).join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const link = document.createElement('a');
@@ -215,6 +296,15 @@ function Home() {
   const chartTip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => (
     active && payload?.length ? <div className="rounded-xl border border-[#dce5dc] bg-[#fffdf8] px-3 py-2 text-xs shadow-lg">
       <div className="mb-1 text-[#7a8980]">{label}</div><strong className="text-[#24483c]">{fmtMoney(payload[0].value)}</strong>
+    </div> : null
+  );
+  const yearlyChartTip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color?: string }>; label?: string }) => (
+    active && payload?.length ? <div className="rounded-xl border border-[#dce5dc] bg-[#fffdf8] px-3 py-2 text-xs shadow-lg">
+      <div className="mb-2 font-semibold text-[#7a8980]">{label}</div>
+      {payload.map((item) => <div key={item.name} className="flex items-center justify-between gap-4">
+        <span className="flex items-center gap-1.5 text-[#62796d]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span>
+        <strong className="text-[#24483c]">{fmtMoney(item.value)}</strong>
+      </div>)}
     </div> : null
   );
 
@@ -234,21 +324,48 @@ function Home() {
           </div>
         </header>
 
-        <section className="rise-in mb-6 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        <section className="rise-in mb-5 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="mb-2 text-sm font-medium text-[#789086]">A little more clarity, every day.</p>
-            <h1 className="font-display text-[32px] font-bold leading-tight tracking-[-.055em] text-[#24483c] sm:text-[42px]">Your money, <span className="text-[#d78967]">this month.</span></h1>
+            <h1 className="font-display text-[32px] font-bold leading-tight tracking-[-.055em] text-[#24483c] sm:text-[42px]">{activeTab === 'monthly' ? <>Your money, <span className="text-[#d78967]">this month.</span></> : <>A year in <span className="text-[#d78967]">perspective.</span></>}</h1>
           </div>
-          <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[#dce5dc] bg-[#fbfaf5]/80 p-2 sm:w-auto">
+          {activeTab === 'monthly' ? <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[#dce5dc] bg-[#fbfaf5]/80 p-2 sm:w-auto">
             <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month" data-testid="button-previous-month" className="grid h-9 w-9 place-items-center rounded-xl text-[#597369] hover:bg-[#edf2e9]"><ArrowLeft size={16} /></button>
             <label className="flex min-w-[160px] flex-1 items-center justify-center gap-2 px-1 text-sm font-semibold text-[#355a4d] sm:flex-none">
               <CalendarDays size={16} className="text-[#789086]" />
               <span className="sr-only">Selected month</span>
-              <input aria-label="Selected month" data-testid="input-selected-month" type="month" value={selectedMonth} onChange={(event) => event.target.value && setSelectedMonth(event.target.value)} className="w-[145px] cursor-pointer bg-transparent text-center text-sm font-semibold text-[#355a4d]" />
+              <input aria-label="Selected month" data-testid="input-selected-month" type="month" value={selectedMonth} onChange={(event) => {
+                if (!event.target.value) return;
+                setSelectedMonth(event.target.value);
+                setSelectedYear(Number(event.target.value.slice(0, 4)));
+              }} className="w-[145px] cursor-pointer bg-transparent text-center text-sm font-semibold text-[#355a4d]" />
             </label>
             <button type="button" onClick={() => shiftMonth(1)} aria-label="Next month" data-testid="button-next-month" className="grid h-9 w-9 place-items-center rounded-xl text-[#597369] hover:bg-[#edf2e9]"><ArrowRight size={16} /></button>
-          </div>
+          </div> : <label className="flex items-center gap-2 rounded-2xl border border-[#dce5dc] bg-[#fbfaf5]/80 px-4 py-3 text-sm font-semibold text-[#355a4d]">
+            <CalendarDays size={16} className="text-[#789086]" />
+            <span>Year</span>
+            <select aria-label="Analytics year" data-testid="select-analytics-year" value={selectedYear} onChange={(event) => setSelectedYear(Number(event.target.value))} className="cursor-pointer bg-transparent text-sm font-semibold text-[#355a4d] outline-none">
+              {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
+            </select>
+          </label>}
         </section>
+
+        <nav aria-label="Ledger views" className="mb-5 flex rounded-2xl border border-[#dce5dc] bg-[#f3f4ed]/80 p-1">
+          <button type="button" aria-current={activeTab === 'monthly' ? 'page' : undefined} data-testid="tab-monthly-ledger" onClick={() => setActiveTab('monthly')} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${activeTab === 'monthly' ? 'bg-white text-[#315548] shadow-sm' : 'text-[#819087] hover:text-[#355a4d]'}`}><CalendarDays size={16} />Monthly Ledger</button>
+          <button type="button" aria-current={activeTab === 'yearly' ? 'page' : undefined} data-testid="tab-yearly-overview" onClick={() => setActiveTab('yearly')} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${activeTab === 'yearly' ? 'bg-white text-[#315548] shadow-sm' : 'text-[#819087] hover:text-[#355a4d]'}`}><BarChart3 size={16} />Yearly Overview</button>
+        </nav>
+
+        {activeTab === 'monthly' ? <>
+        <nav aria-label="Monthly history" data-testid="monthly-history-tabs" className="mb-5 flex gap-2 overflow-x-auto pb-1">
+          {monthTabs.length ? monthTabs.map((month) => <button key={month} type="button" aria-pressed={selectedMonth === month} data-testid={`tab-month-${month}`} onClick={() => {
+            setSelectedMonth(month);
+            setSelectedYear(Number(month.slice(0, 4)));
+            setCategoryFilter('all');
+            setTagFilter('all');
+          }} className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition ${selectedMonth === month ? 'border-[#347d68] bg-[#347d68] text-white shadow-sm' : 'border-[#dce5dc] bg-[#fbfaf5]/75 text-[#62796d] hover:bg-[#edf2e9]'}`}>
+            <span>{monthLabel(month)}</span><span className={`rounded-full px-1.5 py-0.5 text-[10px] ${selectedMonth === month ? 'bg-white/20 text-white' : 'bg-[#e9eee6] text-[#6f8678]'}`}>{monthEntryCounts.get(month)}</span>
+          </button>) : <p className="px-1 py-2 text-xs text-[#87968c]">Your month tabs will appear here once you add an expense.</p>}
+        </nav>
 
         <section className="rise-in-delay glass-card relative mb-5 overflow-hidden rounded-[26px] p-5 sm:p-7">
           <div className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rounded-full border-[1px] border-[#dbe7d8]/80" />
@@ -290,6 +407,18 @@ function Home() {
           </div>
         </section>
 
+        <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6" data-testid="monthly-detail-panel">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+            <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Monthly detail</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">{monthLabel(selectedMonth)}</h2></div>
+            <span className="rounded-full bg-[#edf2e9] px-3 py-1 text-xs font-semibold text-[#628675]">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'}</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-[#f4f5ef]/80 p-4"><p className="text-xs text-[#819087]">Monthly income</p><p data-testid="text-detail-income" className="mt-1 font-display text-xl font-bold text-[#355a4d]">{fmtMoney(activeIncome)}</p></div>
+            <div className="rounded-2xl bg-[#f4f5ef]/80 p-4"><p className="text-xs text-[#819087]">Total spent</p><p data-testid="text-detail-spent" className="mt-1 font-display text-xl font-bold text-[#355a4d]">{fmtMoney(spent)}</p></div>
+            <div className={`rounded-2xl p-4 ${remaining < 0 ? 'bg-[#fae9e4]' : 'bg-[#e8f0e7]'}`}><p className="text-xs text-[#819087]">{remaining < 0 ? 'Deficit' : 'Savings'}</p><p data-testid="text-detail-savings" className={`mt-1 font-display text-xl font-bold ${remaining < 0 ? 'text-[#b8584b]' : 'text-[#347d68]'}`}>{remaining < 0 ? `−${fmtMoney(Math.abs(remaining))}` : fmtMoney(remaining)}</p></div>
+          </div>
+        </section>
+
         <div className="mb-5 grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
           <section id="expense-entry" className="glass-card rounded-[24px] p-5 sm:p-6">
             <div className="mb-5 flex items-start justify-between">
@@ -308,6 +437,7 @@ function Home() {
                 <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">New “Where it belongs” category</span><input aria-label="Custom category name" data-testid="input-custom-category" maxLength={40} required autoFocus value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="For example, Books or Gifts" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
                 <div className="mt-2 flex items-center justify-between gap-2"><p className="text-[10px] text-[#87968c]">Saved when you add this expense.</p><button type="button" data-testid="button-use-existing-category" onClick={() => { setCustomCategoryMode(false); setCustomName(''); }} className="rounded-lg px-2 py-1 text-[11px] font-semibold text-[#628675] hover:bg-[#edf2e9]">Choose existing</button></div>
               </div>}
+              <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Tags <span className="font-normal">(optional, separate with commas or spaces)</span></span><input aria-label="Custom expense tags" data-testid="input-expense-tags" maxLength={240} value={tagInput} onChange={(event) => setTagInput(event.target.value)} placeholder="#iCloud, #CapCut, #Uber" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
               <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">A note <span className="font-normal">(optional)</span></span><input aria-label="Optional note" data-testid="input-expense-note" maxLength={80} value={note} onChange={(event) => setNote(event.target.value)} placeholder="A quick detail to remember" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
               <button type="submit" data-testid="button-save-expense" className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-semibold text-white shadow-sm hover:bg-[#2d705d]">{editingId ? <Check size={16} /> : <Plus size={17} />}{editingId ? 'Save changes' : 'Add to my ledger'}</button>
             </form>
@@ -333,6 +463,31 @@ function Home() {
         </section>
 
         <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-2"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Follow the little labels</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Top spending tags</h2></div><p className="text-[11px] text-[#87968c]">An expense with multiple tags appears under each one.</p></div>
+          {tagData.length ? <div className="grid items-center gap-4 md:grid-cols-[1.25fr_.75fr]">
+            <div className="h-[230px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={tagData} layout="vertical" margin={{ top: 4, right: 18, left: 4, bottom: 4 }}>
+                  <CartesianGrid horizontal={false} stroke="#e8ede5" strokeDasharray="3 5" />
+                  <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#87968c' }} tickFormatter={(value) => value >= 1000 ? `৳${(value / 1000).toFixed(value % 1000 ? 1 : 0)}k` : `৳${value}`} />
+                  <YAxis type="category" dataKey="tag" width={94} tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#62796d' }} tickFormatter={(value) => `#${value}`} />
+                  <ChartTooltip content={chartTip} />
+                  <Bar dataKey="value" fill="#559778" radius={[0, 7, 7, 0]} maxBarSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="space-y-2">
+              {tagData.map((item) => <div key={item.tag} data-testid={`row-tag-total-${item.tag.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="flex items-center justify-between gap-3 rounded-xl bg-[#f4f5ef]/75 px-3 py-2">
+                <span className="truncate text-xs font-medium text-[#62796d]">#{item.tag}</span><span className="shrink-0 text-xs font-semibold text-[#355a4d]">{fmtMoney(item.value)}</span>
+              </div>)}
+            </div>
+          </div> : <div className="flex min-h-[115px] flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/70 text-center">
+            <p className="text-sm font-semibold text-[#547165]">No tags in {monthLabel(selectedMonth)} yet</p>
+            <p className="mt-1 text-xs text-[#8a9990]">Add tags to an expense to see the breakdown.</p>
+          </div>}
+        </section>
+
+        <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">A gentle check-in</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Category budgets</h2></div><p className="text-xs text-[#87968c]">Adjust any amount to suit your month</p></div>
           <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
             {categoryTotals.map((item) => {
@@ -353,10 +508,65 @@ function Home() {
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The little details</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Your ledger</h2></div><button type="button" onClick={exportCsv} data-testid="button-export-csv" className="flex h-9 items-center gap-2 rounded-xl border border-[#dce5dc] bg-[#fffdf8]/70 px-3 text-xs font-semibold text-[#537364] hover:bg-[#edf2e9]"><Download size={14} />Download CSV</button></div>
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
             <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by category</span><select aria-label="Filter expenses by category" data-testid="select-filter-category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]"><option value="all">All categories</option>{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label>
+            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by tag</span><select aria-label="Filter expenses by tag" data-testid="select-filter-tag" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]"><option value="all">All tags</option>{availableTags.map((item) => <option key={item} value={item}>#{item}</option>)}</select></label>
           </div>
-          {monthExpenses.length ? filteredExpenses.length ? <div className="overflow-x-auto"><table className="w-full min-w-[580px] border-collapse text-left"><thead><tr className="border-b border-[#e6ebe3] text-[10px] font-semibold uppercase tracking-[.1em] text-[#95a198]"><th className="pb-3 pr-3 font-semibold">Date</th><th className="pb-3 pr-3 font-semibold">Category</th><th className="pb-3 pr-3 font-semibold">Note</th><th className="pb-3 pr-3 text-right font-semibold">Amount</th><th className="pb-3 text-right font-semibold">Edit</th></tr></thead><tbody>{filteredExpenses.map((item) => <tr key={item.id} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] last:border-0 hover:bg-[#f7f7f0]/65"><td data-testid={`text-expense-date-${item.id}`} className="py-3.5 pr-3 text-xs text-[#74877d]">{new Date(`${item.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td><td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-[#4d6c5e]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td><td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td><td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td><td className="py-3.5 text-right"><div className="flex justify-end gap-1"><button type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></button><button type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => { if (window.confirm('Delete this expense from your ledger?')) setExpenses((current) => current.filter((entry) => entry.id !== item.id)); }} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></button></div></td></tr>)}</tbody></table></div> : <div className="rounded-2xl bg-[#f4f4ec]/65 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165]">No expenses match that category</p><p className="mt-1 text-xs text-[#8a9990]">Try another category.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
+          {monthExpenses.length ? filteredExpenses.length ? <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] border-collapse text-left">
+              <thead><tr className="border-b border-[#e6ebe3] text-[10px] font-semibold uppercase tracking-[.1em] text-[#95a198]"><th className="pb-3 pr-3 font-semibold">Date</th><th className="pb-3 pr-3 font-semibold">Category</th><th className="pb-3 pr-3 font-semibold">Tags</th><th className="pb-3 pr-3 font-semibold">Note</th><th className="pb-3 pr-3 text-right font-semibold">Amount</th><th className="pb-3 text-right font-semibold">Edit</th></tr></thead>
+              <tbody>{filteredExpenses.map((item) => <tr key={item.id} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] last:border-0 hover:bg-[#f7f7f0]/65">
+                <td data-testid={`text-expense-date-${item.id}`} className="py-3.5 pr-3 text-xs text-[#74877d]">{new Date(`${item.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td>
+                <td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-[#4d6c5e]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td>
+                <td data-testid={`text-expense-tags-${item.id}`} className="py-3.5 pr-3"><div className="flex max-w-[170px] flex-wrap gap-1">{item.tags.map((tag) => <span key={tag} className="rounded-md bg-[#edf2e9] px-1.5 py-1 text-[10px] text-[#628675]">#{tag}</span>)}</div></td>
+                <td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td>
+                <td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td>
+                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><button type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></button><button type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => { if (window.confirm('Delete this expense from your ledger?')) setExpenses((current) => current.filter((entry) => entry.id !== item.id)); }} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></button></div></td>
+              </tr>)}</tbody>
+            </table>
+          </div> : <div className="rounded-2xl bg-[#f4f4ec]/65 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165]">No expenses match those filters</p><p className="mt-1 text-xs text-[#8a9990]">Try another category or tag.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
           <div className="mt-4 flex items-center justify-between border-t border-[#e6ebe3] pt-4 text-xs"><span className="text-[#839289]">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'} in {monthLabel(selectedMonth)}</span><span className="font-semibold text-[#426457]">Month total <strong data-testid="text-ledger-total" className="ml-2 font-display text-sm">{fmtMoney(spent)}</strong></span></div>
         </section>
+        </> : <>
+          <section className="mb-5 grid gap-4 md:grid-cols-3" data-testid="yearly-insight-cards">
+            <article className="glass-card rounded-[24px] p-5 sm:p-6">
+              <p className="text-xs font-semibold uppercase tracking-[.1em] text-[#9a8c77]">Highest spending month</p>
+              {peakMonth ? <div className="mt-3"><p data-testid="text-peak-month" className="font-display text-xl font-bold text-[#294d40]">{peakMonth.label}</p><p className="mt-1 text-sm font-semibold text-[#d78967]">{fmtMoney(peakMonth.spent)}</p></div> : <p className="mt-3 text-sm text-[#87968c]">No recorded months yet</p>}
+            </article>
+            <article className="glass-card rounded-[24px] p-5 sm:p-6">
+              <p className="text-xs font-semibold uppercase tracking-[.1em] text-[#9a8c77]">{selectedYear === Number(today.slice(0, 4)) ? 'Total spent year-to-date' : `Total spent in ${selectedYear}`}</p>
+              <p data-testid="text-year-total" className="mt-3 font-display text-2xl font-bold text-[#294d40]">{fmtMoney(yearTotal)}</p>
+              <p className="mt-1 text-xs text-[#87968c]">{yearlyMonthData.length} active {yearlyMonthData.length === 1 ? 'month' : 'months'}</p>
+            </article>
+            <article className="glass-card rounded-[24px] p-5 sm:p-6">
+              <p className="text-xs font-semibold uppercase tracking-[.1em] text-[#9a8c77]">Monthly average spend</p>
+              <p data-testid="text-year-average" className="mt-3 font-display text-2xl font-bold text-[#294d40]">{fmtMoney(monthlyAverage)}</p>
+              <p className="mt-1 text-xs text-[#87968c]">Average across months with expenses</p>
+            </article>
+          </section>
+
+          <section className="glass-card rounded-[24px] p-5 sm:p-6">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+              <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Income and spending</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Monthly comparison · {selectedYear}</h2></div>
+              <span className="text-xs text-[#87968c]">Only months with recorded expenses</span>
+            </div>
+            {yearlyMonthData.length ? <div className="h-[330px] w-full" data-testid="yearly-comparison-chart">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={yearlyMonthData} margin={{ top: 12, right: 12, left: 4, bottom: 4 }}>
+                  <CartesianGrid vertical={false} stroke="#e8ede5" strokeDasharray="3 5" />
+                  <XAxis dataKey="shortLabel" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#87968c' }} />
+                  <YAxis tickLine={false} axisLine={false} width={56} tick={{ fontSize: 10, fill: '#87968c' }} tickFormatter={(value) => value >= 1000 ? `৳${(value / 1000).toFixed(value % 1000 ? 1 : 0)}k` : `৳${value}`} />
+                  <ChartTooltip content={yearlyChartTip} />
+                  <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
+                  <Bar dataKey="spent" name="Spent" fill="#559778" radius={[6, 6, 0, 0]} maxBarSize={42} />
+                  <Bar dataKey="income" name="Monthly income" fill="#d4ad48" radius={[6, 6, 0, 0]} maxBarSize={42} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div> : <div className="flex min-h-[250px] flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/70 text-center">
+              <BarChart3 size={22} className="mb-3 text-[#668b75]" />
+              <p className="text-sm font-semibold text-[#547165]">No recorded spending in {selectedYear}</p>
+              <p className="mt-1 text-xs text-[#8a9990]">Add an expense in the Monthly Ledger to start this year’s analytics.</p>
+            </div>}
+          </section>
+        </>}
         <footer className="flex items-center justify-center gap-2 py-7 text-[11px] text-[#93a097]"><span>Just for you</span><span className="h-1 w-1 rounded-full bg-[#d78967]" /><span>Your numbers never leave this device</span></footer>
       </div>
     </main>
