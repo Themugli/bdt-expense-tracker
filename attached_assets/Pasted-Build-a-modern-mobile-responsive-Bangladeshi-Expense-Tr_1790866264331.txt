@@ -1,0 +1,46 @@
+Build a modern, mobile-responsive Bangladeshi Expense Tracker Web App in React, Tailwind CSS, and Lucide React icons with data persistence (LocalStorage).
+
+### Key Context & Currency
+- Currency: BDT (৳) - All monetary totals, daily logs, and charts MUST display in BDT (৳).
+- Customizable Income: Allow the user to edit and save their total monthly income/allowance (e.g., default to ৳7,000, but fully customizable to any amount with real-time budget recalculated).
+
+---
+
+### Key Features & Requirements
+
+1. Dynamic Monthly Budget & Header Overview:
+   - Monthly Overview Card displaying:
+     * Total Income (Editable via quick inline edit or modal field).
+     * Total Spent This Month (Dynamic sum of logged items).
+     * Remaining Balance (Income - Total Spent).
+   - Visual budget progress bar indicating percentage spent with automatic status color changes (Green < 70%, Yellow 70–90%, Red > 90%).
+
+2. Daily Expense Logger with Custom Tags:
+   - Quick end-of-day entry form.
+   - Fields:
+     * Date Picker (Defaults to today).
+     * Expense Amount (In BDT ৳).
+     * Category Dropdown (Transportation, Subscriptions, Fitness / Protein, Food, Shopping, Bills, Miscellaneous, + Add Custom Category).
+     * Custom Tags Input: Allow adding multiple custom tags to any transaction (e.g., #iCloud, #CapCut, #Uber, #WheyProtein, #Snacks) so expenses can be filtered or grouped by tag.
+     * Short Note / Description.
+
+3. Interactive Graphical Reports & Analytics:
+   - Charts using Recharts:
+     * Category Breakdown (Donut/Pie Chart showing percentage distribution per category).
+     * Daily Spending Trend (Bar Chart or Line Chart showing day-by-day spending spikes across the active month).
+     * Top Spending Tags Breakdown (Visual breakdown of money spent by custom tag).
+
+4. Expense History, Filtering & Export:
+   - Filterable transaction history list with controls to filter by:
+     * Category
+     * Custom Tag
+     * Specific Month
+   - Options to edit or delete logged entries.
+   - One-click CSV Export for downloading current month summaries.
+
+---
+
+### UX & Design Guidelines
+- Mobile-first layout: Minimal friction so logging expenses at the end of the day takes less than 10 seconds.
+- Dark/Light clean UI with modern card styling, subtle borders, and clear typography.
+- Data Persistence: Save all transactions, dynamic income values, and custom categories/tags in LocalStorage.

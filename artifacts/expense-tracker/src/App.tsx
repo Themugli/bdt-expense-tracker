@@ -9,7 +9,7 @@ import {
   ChevronDown, CircleHelp, Download, Edit3, Plus, Trash2, Wallet, X,
 } from 'lucide-react';
 import {
-  Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
+  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
   Tooltip as ChartTooltip, XAxis, YAxis,
 } from 'recharts';
 import {
@@ -21,19 +21,26 @@ import {
 
 const queryClient = new QueryClient();
 
-type Expense = { id: string; date: string; amount: number; category: string; note: string };
+type Expense = { id: string; date: string; amount: number; category: string; note: string; tags: string[] };
 type Category = { name: string; budget: number };
-const MONTHLY_ALLOWANCE = 7000;
+const DEFAULT_MONTHLY_INCOME = 7000;
 const EXPENSES_KEY = 'little-ledger-expenses-v1';
 const CATEGORIES_KEY = 'little-ledger-categories-v1';
+const INCOME_KEY = 'little-ledger-income-v1';
 const initialCategories: Category[] = [
   { name: 'Transportation', budget: 4000 },
   { name: 'Subscriptions', budget: 1000 },
-  { name: 'Protein / Fitness', budget: 1000 },
+  { name: 'Fitness / Protein', budget: 1000 },
   { name: 'Food', budget: 0 },
-  { name: 'Miscellaneous / Savings', budget: 1000 },
+  { name: 'Shopping', budget: 0 },
+  { name: 'Bills', budget: 0 },
+  { name: 'Miscellaneous', budget: 1000 },
 ];
 const categoryColors = ['#347d68', '#df8b68', '#d4ad48', '#6f9aaf', '#a088aa', '#8b9c75', '#cc7669'];
+const categoryAliases: Record<string, string> = {
+  'Protein / Fitness': 'Fitness / Protein',
+  'Miscellaneous / Savings': 'Miscellaneous',
+};
 
 function localDate(date = new Date()) {
   const offset = date.getTimezoneOffset();
@@ -41,7 +48,7 @@ function localDate(date = new Date()) {
 }
 function monthOf(date: string) { return date.slice(0, 7); }
 function fmtMoney(value: number) {
-  return `৳${Math.round(value).toLocaleString('en-BD')}`;
+  return `৳${value.toLocaleString('en-BD', { maximumFractionDigits: 2 })}`;
 }
 function monthLabel(month: string) {
   const [year, mm] = month.split('-').map(Number);
@@ -55,6 +62,46 @@ function readStored<T>(key: string, fallback: T): T {
     return fallback;
   }
 }
+function normalizeCategoryName(name: string) {
+  return categoryAliases[name] ?? name;
+}
+function loadExpenses() {
+  return readStored<Expense[]>(EXPENSES_KEY, []).map((item) => ({
+    ...item,
+    category: normalizeCategoryName(item.category),
+    tags: Array.isArray(item.tags) ? item.tags : [],
+  }));
+}
+function loadCategories() {
+  const saved = readStored<Category[]>(CATEGORIES_KEY, initialCategories);
+  const normalized = new Map<string, Category>();
+  const ordered = [...saved].sort((a, b) => Number(categoryAliases[a.name] !== undefined) - Number(categoryAliases[b.name] !== undefined));
+  for (const item of ordered) {
+    if (!item || typeof item.name !== 'string' || !item.name.trim()) continue;
+    const name = normalizeCategoryName(item.name);
+    if (!normalized.has(name) || item.name === name) {
+      const budget = Number(item.budget);
+      normalized.set(name, { name, budget: Number.isFinite(budget) ? Math.max(0, budget) : 0 });
+    }
+  }
+  const defaults = initialCategories.map((item) => normalized.get(item.name) ?? item);
+  const defaultNames = new Set(initialCategories.map((item) => item.name));
+  const custom = [...normalized.values()].filter((item) => !defaultNames.has(item.name));
+  return [...defaults, ...custom];
+}
+function parseTags(value: string) {
+  const tags: string[] = [];
+  const seen = new Set<string>();
+  for (const part of value.split(/[\s,;]+/)) {
+    const tag = part.trim().replace(/^#+/, '').replace(/[,:;]+$/, '').slice(0, 32);
+    const key = tag.toLocaleLowerCase();
+    if (tag && !seen.has(key) && tags.length < 12) {
+      tags.push(tag);
+      seen.add(key);
+    }
+  }
+  return tags;
+}
 function colorForCategory(name: string, categories: Category[]) {
   const index = categories.findIndex((item) => item.name === name);
   return categoryColors[Math.max(0, index) % categoryColors.length];
@@ -62,31 +109,67 @@ function colorForCategory(name: string, categories: Category[]) {
 
 function Home() {
   const today = localDate();
-  const [expenses, setExpenses] = useState<Expense[]>(() => readStored(EXPENSES_KEY, []));
-  const [categories, setCategories] = useState<Category[]>(() => readStored(CATEGORIES_KEY, initialCategories));
+  const [expenses, setExpenses] = useState<Expense[]>(loadExpenses);
+  const [categories, setCategories] = useState<Category[]>(loadCategories);
+  const [monthlyIncome, setMonthlyIncome] = useState(() => {
+    const saved = readStored(INCOME_KEY, DEFAULT_MONTHLY_INCOME);
+    return Number.isFinite(saved) && saved >= 0 ? saved : DEFAULT_MONTHLY_INCOME;
+  });
   const [selectedMonth, setSelectedMonth] = useState(monthOf(today));
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(today);
   const [category, setCategory] = useState(initialCategories[0].name);
   const [customName, setCustomName] = useState('');
+  const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingIncome, setEditingIncome] = useState(false);
+  const [incomeDraft, setIncomeDraft] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
 
   useEffect(() => { localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses)); }, [expenses]);
   useEffect(() => { localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories)); }, [categories]);
+  useEffect(() => { localStorage.setItem(INCOME_KEY, JSON.stringify(monthlyIncome)); }, [monthlyIncome]);
 
   const monthExpenses = useMemo(
     () => expenses.filter((entry) => monthOf(entry.date) === selectedMonth).sort((a, b) => b.date.localeCompare(a.date)),
     [expenses, selectedMonth],
   );
   const spent = monthExpenses.reduce((total, item) => total + item.amount, 0);
-  const remaining = MONTHLY_ALLOWANCE - spent;
-  const usage = Math.min(100, Math.round((spent / MONTHLY_ALLOWANCE) * 100));
+  const draftIncomeNumber = Number(incomeDraft);
+  const activeIncome = editingIncome && incomeDraft.trim() !== '' && Number.isFinite(draftIncomeNumber) && draftIncomeNumber >= 0
+    ? draftIncomeNumber
+    : monthlyIncome;
+  const remaining = activeIncome - spent;
+  const rawUsage = activeIncome > 0 ? (spent / activeIncome) * 100 : spent > 0 ? 100 : 0;
+  const usage = Math.min(100, Math.round(rawUsage));
   const categoryTotals = useMemo(() => categories.map((item) => ({
     ...item,
     spent: monthExpenses.filter((entry) => entry.category === item.name).reduce((total, entry) => total + entry.amount, 0),
   })), [categories, monthExpenses]);
   const pieData = categoryTotals.filter((item) => item.spent > 0).map((item) => ({ name: item.name, value: item.spent }));
+  const tagData = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const expense of monthExpenses) {
+      for (const tag of expense.tags) totals.set(tag, (totals.get(tag) ?? 0) + expense.amount);
+    }
+    return [...totals.entries()]
+      .map(([tag, value]) => ({ tag, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+  }, [monthExpenses]);
+  const availableTags = useMemo(
+    () => [...new Set(expenses.flatMap((expense) => expense.tags))].sort((a, b) => a.localeCompare(b)),
+    [expenses],
+  );
+  const filteredExpenses = useMemo(
+    () => monthExpenses.filter((expense) =>
+      (categoryFilter === 'all' || expense.category === categoryFilter) &&
+      (tagFilter === 'all' || expense.tags.includes(tagFilter)),
+    ),
+    [monthExpenses, categoryFilter, tagFilter],
+  );
   const daysInMonth = new Date(Number(selectedMonth.slice(0, 4)), Number(selectedMonth.slice(5, 7)), 0).getDate();
   const trendData = Array.from({ length: daysInMonth }, (_, index) => {
     const day = String(index + 1).padStart(2, '0');
@@ -99,6 +182,7 @@ function Home() {
     setDate(today);
     setCategory(categories[0]?.name ?? '');
     setCustomName('');
+    setTagInput('');
     setNote('');
     setEditingId(null);
   }
@@ -112,7 +196,7 @@ function Home() {
     }
     const updated: Expense = {
       id: editingId ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      date, amount: parsedAmount, category: chosenCategory, note: note.trim(),
+      date, amount: parsedAmount, category: chosenCategory, note: note.trim(), tags: parseTags(tagInput),
     };
     setExpenses((current) => editingId
       ? current.map((item) => item.id === editingId ? updated : item)
@@ -126,8 +210,16 @@ function Home() {
     setDate(expense.date);
     setCategory(expense.category);
     setCustomName('');
+    setTagInput(expense.tags.map((tag) => `#${tag}`).join(', '));
     setNote(expense.note);
     document.getElementById('expense-entry')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function saveIncome(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const next = Number(incomeDraft);
+    if (!Number.isFinite(next) || next < 0) return;
+    setMonthlyIncome(next);
+    setEditingIncome(false);
   }
   function changeBudget(name: string, raw: string) {
     const next = Math.max(0, Number(raw) || 0);
@@ -139,7 +231,7 @@ function Home() {
     setSelectedMonth(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`);
   }
   function exportCsv() {
-    const rows = [['Date', 'Amount (BDT)', 'Category', 'Note'], ...monthExpenses.map((item) => [item.date, String(item.amount), item.category, item.note])];
+    const rows = [['Date', 'Amount (BDT)', 'Category', 'Tags', 'Note'], ...monthExpenses.map((item) => [item.date, String(item.amount), item.category, item.tags.map((tag) => `#${tag}`).join(' '), item.note])];
     const csv = rows.map((row) => row.map((value) => `"${value.replaceAll('"', '""')}"`).join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const link = document.createElement('a');
@@ -148,7 +240,7 @@ function Home() {
     link.click();
     URL.revokeObjectURL(url);
   }
-  const balanceTone = remaining < 0 ? 'over' : usage >= 75 ? 'careful' : 'steady';
+  const balanceTone = remaining < 0 || rawUsage > 90 ? 'over' : rawUsage >= 70 ? 'careful' : 'steady';
   const chartTip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => (
     active && payload?.length ? <div className="rounded-xl border border-[#dce5dc] bg-[#fffdf8] px-3 py-2 text-xs shadow-lg">
       <div className="mb-1 text-[#7a8980]">{label}</div><strong className="text-[#24483c]">{fmtMoney(payload[0].value)}</strong>
@@ -192,10 +284,18 @@ function Home() {
           <div className="pointer-events-none absolute -right-2 -top-10 h-44 w-44 rounded-full border-[1px] border-[#e6ebe0]" />
           <div className="relative grid gap-7 md:grid-cols-[1.15fr_.85fr] md:items-center">
             <div>
-              <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.12em] text-[#789086]"><span className="h-[1px] w-5 bg-[#a3b8a8]" /> Monthly allowance</div>
+              <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.12em] text-[#789086]"><span className="h-[1px] w-5 bg-[#a3b8a8]" /> Monthly income</div>
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <div data-testid="text-monthly-allowance" className="font-display text-[43px] font-bold leading-none tracking-[-.06em] text-[#24483c] sm:text-[54px]">{fmtMoney(MONTHLY_ALLOWANCE)}</div>
-                <div className="text-sm text-[#819087]">to make yours</div>
+                {editingIncome ? <form onSubmit={saveIncome} className="flex flex-wrap items-center gap-2">
+                  <span className="font-display text-2xl font-bold text-[#24483c]">৳</span>
+                  <input aria-label="Monthly income in BDT" data-testid="input-monthly-income" type="number" min="0" step="0.01" required autoFocus value={incomeDraft} onChange={(event) => setIncomeDraft(event.target.value)} className="h-11 w-36 rounded-xl border border-[#cbdace] bg-white/70 px-3 text-lg font-semibold text-[#24483c] outline-none focus:border-[#84a998]" />
+                  <button type="submit" data-testid="button-save-income" className="h-9 rounded-lg bg-[#347d68] px-3 text-xs font-semibold text-white hover:bg-[#2d705d]">Save</button>
+                  <button type="button" aria-label="Cancel income edit" data-testid="button-cancel-income" onClick={() => setEditingIncome(false)} className="grid h-9 w-9 place-items-center rounded-lg text-[#768980] hover:bg-[#edf1e8]"><X size={16} /></button>
+                </form> : <>
+                  <div data-testid="text-monthly-allowance" className="font-display text-[43px] font-bold leading-none tracking-[-.06em] text-[#24483c] sm:text-[54px]">{fmtMoney(monthlyIncome)}</div>
+                  <button type="button" aria-label="Edit monthly income" data-testid="button-edit-income" onClick={() => { setIncomeDraft(String(monthlyIncome)); setEditingIncome(true); }} className="rounded-lg px-2 py-1 text-xs font-semibold text-[#628675] hover:bg-[#edf2e9]">Edit</button>
+                </>}
+                <div className="text-sm text-[#819087]">per month</div>
               </div>
               <div className="mt-7 flex flex-wrap gap-x-9 gap-y-4">
                 <div><div className="mb-1 text-xs text-[#819087]">Spent so far</div><div data-testid="text-monthly-spent" className="font-display text-[22px] font-bold tracking-[-.04em] text-[#355a4d]">{fmtMoney(spent)}</div></div>
@@ -210,10 +310,10 @@ function Home() {
               <div className="h-3 overflow-hidden rounded-full bg-[#e6ebe3]">
                 <div data-testid="progress-allowance" className={`h-full rounded-full transition-[width] duration-500 ${balanceTone === 'over' ? 'bg-[#c85f51]' : balanceTone === 'careful' ? 'bg-[#d9b74f]' : 'bg-[#65a17d]'}`} style={{ width: `${usage}%` }} />
               </div>
-              <div className="mt-2 flex justify-between text-[11px] text-[#8a9990]"><span>৳0</span><span>{remaining < 0 ? `${fmtMoney(Math.abs(remaining))} over` : `${fmtMoney(remaining)} to go`}</span><span>৳7,000</span></div>
+              <div className="mt-2 flex justify-between text-[11px] text-[#8a9990]"><span>৳0</span><span>{remaining < 0 ? `${fmtMoney(Math.abs(remaining))} over` : `${fmtMoney(remaining)} to go`}</span><span>{fmtMoney(activeIncome)}</span></div>
               <p className="mt-4 flex items-center gap-2 text-xs leading-relaxed text-[#71857a]">
                 {spent === 0 ? <CircleHelp size={14} /> : remaining < 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                {spent === 0 ? 'A fresh page. Add your first expense when you’re ready.' : remaining < 0 ? 'You’ve gone a little beyond this month’s allowance.' : `${fmtMoney(remaining)} is still available for the rest of your month.`}
+                {spent === 0 ? 'A fresh page. Add your first expense when you’re ready.' : remaining < 0 ? 'You’ve gone a little beyond this month’s income.' : `${fmtMoney(remaining)} is still available for the rest of your month.`}
               </p>
             </div>
           </div>
@@ -232,6 +332,7 @@ function Home() {
               </div>
               <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Where it belongs</span><span className="relative block"><select aria-label="Expense category" data-testid="select-expense-category" value={category} onChange={(event) => setCategory(event.target.value)} required className="h-11 w-full appearance-none rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 pr-9 text-sm text-[#4d6c5e]">{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}<option value="__custom__">+ Create a category</option></select><ChevronDown size={15} className="pointer-events-none absolute right-3 top-3.5 text-[#82958a]" /></span></label>
               {category === '__custom__' && <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Category name</span><input aria-label="Custom category name" data-testid="input-custom-category" required value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="Give it a name" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>}
+              <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Tags <span className="font-normal">(optional, separate with commas or spaces)</span></span><input aria-label="Custom expense tags" data-testid="input-expense-tags" maxLength={240} value={tagInput} onChange={(event) => setTagInput(event.target.value)} placeholder="#iCloud, #CapCut, #Uber" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
               <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">A note <span className="font-normal">(optional)</span></span><input aria-label="Optional note" data-testid="input-expense-note" maxLength={80} value={note} onChange={(event) => setNote(event.target.value)} placeholder="A quick detail to remember" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
               <button type="submit" data-testid="button-save-expense" className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-semibold text-white shadow-sm hover:bg-[#2d705d]">{editingId ? <Check size={16} /> : <Plus size={17} />}{editingId ? 'Save changes' : 'Add to my ledger'}</button>
             </form>
@@ -257,6 +358,35 @@ function Home() {
         </section>
 
         <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+            <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Follow the little labels</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Top spending tags</h2></div>
+            <p className="text-[11px] text-[#87968c]">Tagged expenses can appear under more than one tag.</p>
+          </div>
+          {tagData.length ? <div className="grid items-center gap-4 md:grid-cols-[1.25fr_.75fr]">
+            <div className="h-[230px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={tagData} layout="vertical" margin={{ top: 4, right: 18, left: 4, bottom: 4 }}>
+                  <CartesianGrid horizontal={false} stroke="#e8ede5" strokeDasharray="3 5" />
+                  <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#87968c' }} tickFormatter={(value) => value >= 1000 ? `৳${(value / 1000).toFixed(value % 1000 ? 1 : 0)}k` : `৳${value}`} />
+                  <YAxis type="category" dataKey="tag" width={94} tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#62796d' }} tickFormatter={(value) => `#${value}`} />
+                  <ChartTooltip content={chartTip} />
+                  <Bar dataKey="value" fill="#559778" radius={[0, 7, 7, 0]} maxBarSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="space-y-2">
+              {tagData.map((item) => <div key={item.tag} data-testid={`row-tag-total-${item.tag.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="flex items-center justify-between gap-3 rounded-xl bg-[#f4f5ef]/75 px-3 py-2">
+                <span className="truncate text-xs font-medium text-[#62796d]">#{item.tag}</span>
+                <span className="shrink-0 text-xs font-semibold text-[#355a4d]">{fmtMoney(item.value)}</span>
+              </div>)}
+            </div>
+          </div> : <div className="flex min-h-[130px] flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/70 text-center">
+            <p className="text-sm font-semibold text-[#547165]">No tags in this month yet</p>
+            <p className="mt-1 text-xs text-[#8a9990]">Add tags to expenses to see what they’re adding up to.</p>
+          </div>}
+        </section>
+
+        <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">A gentle check-in</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Category budgets</h2></div><p className="text-xs text-[#87968c]">Adjust any amount to suit your month</p></div>
           <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
             {categoryTotals.map((item) => {
@@ -275,7 +405,11 @@ function Home() {
 
         <section className="glass-card rounded-[24px] p-5 sm:p-6">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The little details</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Your ledger</h2></div><button type="button" onClick={exportCsv} data-testid="button-export-csv" className="flex h-9 items-center gap-2 rounded-xl border border-[#dce5dc] bg-[#fffdf8]/70 px-3 text-xs font-semibold text-[#537364] hover:bg-[#edf2e9]"><Download size={14} />Download CSV</button></div>
-          {monthExpenses.length ? <div className="overflow-x-auto"><table className="w-full min-w-[520px] border-collapse text-left"><thead><tr className="border-b border-[#e6ebe3] text-[10px] font-semibold uppercase tracking-[.1em] text-[#95a198]"><th className="pb-3 pr-3 font-semibold">Date</th><th className="pb-3 pr-3 font-semibold">Category</th><th className="pb-3 pr-3 font-semibold">Note</th><th className="pb-3 pr-3 text-right font-semibold">Amount</th><th className="pb-3 text-right font-semibold">Edit</th></tr></thead><tbody>{monthExpenses.map((item) => <tr key={item.id} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] last:border-0 hover:bg-[#f7f7f0]/65"><td data-testid={`text-expense-date-${item.id}`} className="py-3.5 pr-3 text-xs text-[#74877d]">{new Date(`${item.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td><td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-[#4d6c5e]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td><td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td><td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td><td className="py-3.5 text-right"><div className="flex justify-end gap-1"><button type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></button><button type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => { if (window.confirm('Delete this expense from your ledger?')) setExpenses((current) => current.filter((entry) => entry.id !== item.id)); }} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></button></div></td></tr>)}</tbody></table></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
+          <div className="mb-4 grid gap-3 sm:grid-cols-2">
+            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by category</span><select aria-label="Filter expenses by category" data-testid="select-filter-category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]"><option value="all">All categories</option>{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label>
+            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by tag</span><select aria-label="Filter expenses by tag" data-testid="select-filter-tag" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]"><option value="all">All tags</option>{availableTags.map((item) => <option key={item} value={item}>#{item}</option>)}</select></label>
+          </div>
+          {monthExpenses.length ? filteredExpenses.length ? <div className="overflow-x-auto"><table className="w-full min-w-[680px] border-collapse text-left"><thead><tr className="border-b border-[#e6ebe3] text-[10px] font-semibold uppercase tracking-[.1em] text-[#95a198]"><th className="pb-3 pr-3 font-semibold">Date</th><th className="pb-3 pr-3 font-semibold">Category</th><th className="pb-3 pr-3 font-semibold">Tags</th><th className="pb-3 pr-3 font-semibold">Note</th><th className="pb-3 pr-3 text-right font-semibold">Amount</th><th className="pb-3 text-right font-semibold">Edit</th></tr></thead><tbody>{filteredExpenses.map((item) => <tr key={item.id} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] last:border-0 hover:bg-[#f7f7f0]/65"><td data-testid={`text-expense-date-${item.id}`} className="py-3.5 pr-3 text-xs text-[#74877d]">{new Date(`${item.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td><td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-[#4d6c5e]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td><td data-testid={`text-expense-tags-${item.id}`} className="py-3.5 pr-3"><div className="flex max-w-[170px] flex-wrap gap-1">{item.tags.length ? item.tags.map((tag) => <span key={tag} className="rounded-md bg-[#edf2e9] px-1.5 py-1 text-[10px] text-[#628675]">#{tag}</span>) : <span className="text-xs text-[#93a097]">—</span>}</div></td><td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td><td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td><td className="py-3.5 text-right"><div className="flex justify-end gap-1"><button type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></button><button type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => { if (window.confirm('Delete this expense from your ledger?')) setExpenses((current) => current.filter((entry) => entry.id !== item.id)); }} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></button></div></td></tr>)}</tbody></table></div> : <div className="rounded-2xl bg-[#f4f4ec]/65 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165]">No expenses match those filters</p><p className="mt-1 text-xs text-[#8a9990]">Try another category or tag.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
           <div className="mt-4 flex items-center justify-between border-t border-[#e6ebe3] pt-4 text-xs"><span className="text-[#839289]">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'} in {monthLabel(selectedMonth)}</span><span className="font-semibold text-[#426457]">Month total <strong data-testid="text-ledger-total" className="ml-2 font-display text-sm">{fmtMoney(spent)}</strong></span></div>
         </section>
         <footer className="flex items-center justify-center gap-2 py-7 text-[11px] text-[#93a097]"><span>Just for you</span><span className="h-1 w-1 rounded-full bg-[#d78967]" /><span>Your numbers never leave this device</span></footer>
