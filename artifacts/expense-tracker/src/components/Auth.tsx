@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { MfaEnrollment } from './MfaEnrollment';
-import { MfaChallenge } from './MfaChallenge';
 
 // Eye icons inline to avoid extra dependencies
 function EyeIcon() {
@@ -70,8 +68,6 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [needsMfa, setNeedsMfa] = useState(false);
-  const [mfaEnrolled, setMfaEnrolled] = useState(false);
 
   // Detect password reset link (Supabase sends back #access_token=...&type=recovery)
   useEffect(() => {
@@ -86,7 +82,7 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session && mode !== 'reset') {
-        checkMfaStatus(session);
+        onAuthenticated();
       }
     });
 
@@ -96,26 +92,12 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
         return;
       }
       if (session && mode !== 'reset') {
-        checkMfaStatus(session);
-      } else if (!session) {
-        setNeedsMfa(false);
+        onAuthenticated();
       }
     });
 
     return () => { subscription.unsubscribe(); };
   }, [mode]);
-
-  const checkMfaStatus = async (currentSession: any) => {
-    const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (error) { console.error(error); return; }
-    if (data.currentLevel === 'aal2') {
-      onAuthenticated();
-    } else {
-      const factors = await supabase.auth.mfa.listFactors();
-      setMfaEnrolled(!!(factors.data && factors.data.totp.length > 0));
-      setNeedsMfa(true);
-    }
-  };
 
   const clearForm = () => {
     setError(null);
@@ -198,23 +180,7 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
 
   const handleSignOut = async () => { await supabase.auth.signOut(); };
 
-  // ── MFA screens ────────────────────────────────────────────────────────
-  if (needsMfa) {
-    return mfaEnrolled ? (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f4f4ec] p-4">
-        <MfaChallenge onSuccess={() => onAuthenticated()} />
-        <button onClick={handleSignOut} className="mt-6 text-sm text-[#87968c] hover:text-[#294d40]">Sign Out</button>
-      </div>
-    ) : (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f4f4ec] p-4 space-y-6">
-        <div className="max-w-md w-full bg-[#fcf8e3] border border-[#f0c36d] text-[#8a6d3b] p-4 rounded-lg text-sm text-center">
-          You must set up Two-Factor Authentication to access your ledger.
-        </div>
-        <MfaEnrollment onSuccess={() => onAuthenticated()} />
-        <button onClick={handleSignOut} className="mt-4 text-sm text-[#87968c] hover:text-[#294d40]">Sign Out</button>
-      </div>
-    );
-  }
+
 
   // ── Reset Password screen (from email link) ────────────────────────────
   if (mode === 'reset') {
