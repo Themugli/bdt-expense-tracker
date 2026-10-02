@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>little ledger. — Bangladeshi Expense Tracker with 2FA Auth</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"DM Sans"', 'sans-serif'],
+            display: ['"Manrope"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            forest: {
+              DEFAULT: '#24483c',
+              light: '#347d68',
+              hover: '#2d705d',
+            },
+            coral: '#d78967',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #fbfaf5;
+      background-image:
+        radial-gradient(ellipse at 12% -10%, rgba(203, 221, 195, .42), transparent 34rem),
+        radial-gradient(ellipse at 100% 32%, rgba(239, 210, 175, .2), transparent 31rem);
+      color: #24483c;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.76);
+      border: 1px solid rgba(220, 229, 220, 0.85);
+      box-shadow: 0 12px 30px rgba(36, 70, 57, 0.055);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .donut-segment {
+      transition: stroke-dasharray 0.5s ease, stroke-dashoffset 0.5s ease;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 2px solid rgba(52, 125, 104, 0.25);
+      outline-offset: 1px;
+    }
+
+    .otp-input:focus {
+      border-color: #347d68;
+      box-shadow: 0 0 0 2px rgba(52, 125, 104, 0.2);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .animate-spin {
+      animation: spin 0.8s linear infinite;
+    }
+
+    #googleLoginBtn:hover {
+      box-shadow: 0 1px 3px rgba(60,64,67,0.15), 0 4px 8px rgba(60,64,67,0.15);
+    }
+    #appleLoginBtn:hover {
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+  <!-- ========================================== -->
+  <!-- 1. AUTHENTICATION & LANDING SCREEN (When Logged Out) -->
+  <!-- ========================================== -->
+  <div id="authScreen" class="min-h-screen grid place-items-center px-4 py-10 sm:px-6">
+    <div class="w-full max-w-5xl animate-fade-in">
+      <!-- Auth Top Header -->
+      <header class="mb-8 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="grid h-11 w-11 place-items-center rounded-2xl bg-[#dce9dc] text-[#347d68]">
+            <i data-lucide="wallet" class="h-5 w-5"></i>
+          </div>
+          <div>
+            <div class="font-display text-[20px] font-extrabold tracking-tight text-[#24483c]">
+              little ledger<span class="text-[#d78967]">.</span>
+            </div>
+            <div class="text-[10px] font-medium tracking-widest text-[#819087]">YOUR MONEY, IN PERSPECTIVE</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 rounded-full border border-[#dce5dc] bg-white/80 px-3.5 py-1.5 text-xs font-medium text-[#63796d]">
+          <i data-lucide="shield-check" class="h-4 w-4 text-[#347d68]"></i>
+          <span class="hidden sm:inline">Protected with optional 2FA</span>
+          <span class="sm:hidden">Secure</span>
+        </div>
+      </header>
+
+      <!-- Auth Main Glass Container -->
+      <div class="glass-card grid overflow-hidden rounded-[30px] border border-[#dce5dc] md:grid-cols-[1.1fr_.9fr]">
+        <!-- Brand Narrative / Left Column -->
+        <div class="flex flex-col justify-between p-7 sm:p-10 lg:p-12">
+          <div>
+            <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-[#eef3eb] px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#547363]">
+              <span class="h-1.5 w-1.5 rounded-full bg-[#347d68]"></span> Personal Finance for Bangladesh
+            </div>
+            <h1 class="font-display text-3xl font-extrabold leading-tight text-[#24483c] sm:text-4xl lg:text-[44px]">
+              Every taka counted, <br />
+              <span class="text-[#d78967]">under your lock.</span>
+            </h1>
+            <p class="mt-4 text-sm leading-relaxed text-[#6f8578] max-w-md">
+              A private, minimalist expense tracker crafted in Bangladeshi Taka (৳). Track daily commutes, subscriptions, and meals with instant reports, custom tags, and two-factor security.
+            </p>
+
+            <!-- Security Callouts -->
+            <div class="mt-8 space-y-3.5">
+              <div class="flex items-start gap-3.5 rounded-2xl border border-[#e2e9df] bg-white/60 p-3.5">
+                <div class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#e7eee4] text-[#347d68]">
+                  <i data-lucide="key-round" class="h-4 w-4"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-semibold text-[#315548]">Two-Factor Authentication (TOTP)</h4>
+                  <p class="text-[11px] text-[#819087] leading-relaxed">Compatible with Google Authenticator, Microsoft Authenticator & 1Password.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3.5 rounded-2xl border border-[#e2e9df] bg-white/60 p-3.5">
+                <div class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#e7eee4] text-[#347d68]">
+                  <i data-lucide="hard-drive-download" class="h-4 w-4"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-semibold text-[#315548]">On-Device Data Sovereignty</h4>
+                  <p class="text-[11px] text-[#819087] leading-relaxed">Transactions stay safe in your browser's private storage, isolated per user.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-8 pt-6 border-t border-[#e6ece3] flex items-center justify-between text-xs text-[#819087]">
+            <span>Currency: ৳ (BDT)</span>
+            <span>Version 2.0 · 2FA Ready</span>
+          </div>
+        </div>
+
+        <!-- Form Right Column -->
+        <div class="border-t border-[#e2eae0] bg-[#f8f7f2]/90 p-7 sm:p-10 md:border-l md:border-t-0 flex flex-col justify-center">
+
+          <!-- ===== SOCIAL LOGIN BUTTONS (OAuth) ===== -->
+          <div class="mb-5 space-y-2.5">
+            <button id="googleLoginBtn" type="button" class="group w-full h-11 flex items-center justify-center gap-3 rounded-xl border border-[#dadce0] bg-white px-4 text-sm font-semibold text-[#3c4043] shadow-sm hover:shadow-md hover:border-[#c1c6cb] active:bg-[#f8f9fa] transition-all duration-150">
+              <!-- Official Google "G" Logo SVG -->
+              <svg class="h-[18px] w-[18px] shrink-0" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+
+            <button id="appleLoginBtn" type="button" class="group w-full h-11 flex items-center justify-center gap-3 rounded-xl border border-[#1d1d1f]/15 bg-[#000000] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#1d1d1f] active:bg-[#333] transition-all duration-150">
+              <!-- Official Apple Logo SVG -->
+              <svg class="h-[18px] w-[18px] shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+              </svg>
+              <span>Continue with Apple</span>
+            </button>
+          </div>
+
+          <!-- Social / Email Divider -->
+          <div class="relative mb-5 text-center text-[10px] font-bold uppercase tracking-wider text-[#9aa9a0]">
+            <span class="bg-[#f8f7f2] px-3 relative z-10">or continue with email</span>
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-[#dce5dc]"></div></div>
+          </div>
+
+          <!-- Auth Toggle Tabs -->
+          <div class="mb-6 flex rounded-2xl border border-[#dce5dc] bg-[#ebeee7] p-1">
+            <button id="authTabLogin" class="flex h-10 flex-1 items-center justify-center rounded-xl bg-white text-xs font-bold text-[#24483c] shadow-sm transition">
+              Log In
+            </button>
+            <button id="authTabSignup" class="flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-semibold text-[#7a8d81] hover:text-[#24483c] transition">
+              Create Account
+            </button>
+          </div>
+
+          <!-- Alert / Error Notice -->
+          <div id="authNotice" class="hidden mb-4 rounded-xl p-3 text-xs leading-relaxed"></div>
+
+          <!-- LOGIN FORM -->
+          <form id="loginForm" class="space-y-4">
+            <div>
+              <label class="mb-1.5 block text-xs font-semibold text-[#667e70]">Email or Username</label>
+              <div class="flex h-11 items-center rounded-xl border border-[#dce5dc] bg-white px-3 focus-within:border-[#347d68]">
+                <i data-lucide="mail" class="mr-2.5 h-4 w-4 text-[#8a9d90]"></i>
+                <input id="loginEmail" type="text" required placeholder="demo@ledger.bd or nafin" value="demo@ledger.bd"
+                  class="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none placeholder:text-[#b4c0b7]" />
+              </div>
+            </div>
+
+            <div>
+              <label class="mb-1.5 block text-xs font-semibold text-[#667e70]">Password</label>
+              <div class="flex h-11 items-center rounded-xl border border-[#dce5dc] bg-white px-3 focus-within:border-[#347d68]">
+                <i data-lucide="lock" class="mr-2.5 h-4 w-4 text-[#8a9d90]"></i>
+                <input id="loginPassword" type="password" required placeholder="••••••••" value="demo123"
+                  class="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none placeholder:text-[#b4c0b7]" />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs pt-1">
+              <label class="flex items-center gap-2 cursor-pointer text-[#62796d]">
+                <input id="rememberMeCheck" type="checkbox" checked class="h-4 w-4 rounded accent-[#347d68] cursor-pointer" />
+                <span>Remember me on this device</span>
+              </label>
+            </div>
+
+            <button type="submit" class="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-bold text-white shadow-sm hover:bg-[#2d705d] transition">
+              <span>Log In to Ledger</span>
+              <i data-lucide="arrow-right" class="h-4 w-4"></i>
+            </button>
+          </form>
+
+          <!-- SIGN UP FORM -->
+          <form id="signupForm" class="hidden space-y-3.5">
+            <div>
+              <label class="mb-1 block text-xs font-semibold text-[#667e70]">Your Name</label>
+              <div class="flex h-10 items-center rounded-xl border border-[#dce5dc] bg-white px-3 focus-within:border-[#347d68]">
+                <i data-lucide="user" class="mr-2 h-4 w-4 text-[#8a9d90]"></i>
+                <input id="signupName" type="text" required placeholder="Nafin Ahmed"
+                  class="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none" />
+              </div>
+            </div>
+
+            <div>
+              <label class="mb-1 block text-xs font-semibold text-[#667e70]">Email Address</label>
+              <div class="flex h-10 items-center rounded-xl border border-[#dce5dc] bg-white px-3 focus-within:border-[#347d68]">
+                <i data-lucide="mail" class="mr-2 h-4 w-4 text-[#8a9d90]"></i>
+                <input id="signupEmail" type="email" required placeholder="nafin@example.com"
+                  class="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none" />
+              </div>
+            </div>
+
+            <div>
+              <label class="mb-1 block text-xs font-semibold text-[#667e70]">Create Password</label>
+              <div class="flex h-10 items-center rounded-xl border border-[#dce5dc] bg-white px-3 focus-within:border-[#347d68]">
+                <i data-lucide="lock" class="mr-2 h-4 w-4 text-[#8a9d90]"></i>
+                <input id="signupPassword" type="password" required minlength="4" placeholder="At least 4 characters"
+                  class="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none" />
+              </div>
+            </div>
+
+            <button type="submit" class="w-full h-11 mt-1 flex items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-bold text-white shadow-sm hover:bg-[#2d705d] transition">
+              <span>Create Account & Continue</span>
+              <i data-lucide="check" class="h-4 w-4"></i>
+            </button>
+          </form>
+
+          <!-- Divider -->
+          <div class="relative my-6 text-center text-[10px] font-bold uppercase tracking-wider text-[#9aa9a0]">
+            <span class="bg-[#f8f7f2] px-3 relative z-10">Or quick access</span>
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-[#dce5dc]"></div></div>
+          </div>
+
+          <!-- Instant Demo & Guest Buttons -->
+          <div class="grid grid-cols-2 gap-3">
+            <button id="demoLoginBtn" type="button" class="h-10 flex items-center justify-center gap-2 rounded-xl border border-[#cbdace] bg-white px-3 text-xs font-semibold text-[#315548] hover:bg-[#edf2e9] transition">
+              <i data-lucide="sparkles" class="h-3.5 w-3.5 text-[#d78967]"></i> Demo Login
+            </button>
+            <button id="guestLoginBtn" type="button" class="h-10 flex items-center justify-center gap-2 rounded-xl border border-[#dce5dc] bg-white/70 px-3 text-xs font-semibold text-[#627a6d] hover:bg-white transition">
+              <i data-lucide="user-check" class="h-3.5 w-3.5"></i> Guest Mode
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- 2. TWO-FACTOR (2FA) LOGIN CHALLENGE MODAL -->
+  <!-- ========================================== -->
+  <div id="twoFactorChallengeModal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center p-4">
+    <div class="glass-card max-w-md w-full rounded-[28px] border border-white/80 p-6 sm:p-8 animate-fade-in bg-white/95">
+      <div class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#e3efe4] text-[#347d68]">
+        <i data-lucide="shield-alert" class="h-7 w-7"></i>
+      </div>
+      
+      <div class="text-center">
+        <h2 class="font-display text-2xl font-bold text-[#24483c]">2FA Verification Required</h2>
+        <p class="mt-1.5 text-xs text-[#758a7e] leading-relaxed">
+          Your account is secured with Two-Factor Authentication. Please enter the 6-digit code from your authenticator app.
+        </p>
+      </div>
+
+      <div class="mt-6">
+        <label class="block text-center text-xs font-bold uppercase tracking-wider text-[#637d6e] mb-2">Authenticator Code</label>
+        <div class="flex justify-center gap-2" id="otpInputGroup">
+          <input type="text" maxlength="1" class="otp-input w-11 h-12 text-center text-xl font-bold font-mono rounded-xl border border-[#cbdace] bg-white text-[#24483c] outline-none" autofocus />
+          <input type="text" maxlength="1" class="otp-input w-11 h-12 text-center text-xl font-bold font-mono rounded-xl border border-[#cbdace] bg-white text-[#24483c] outline-none" />
+          <input type="text" maxlength="1" class="otp-input w-11 h-12 text-center text-xl font-bold font-mono rounded-xl border border-[#cbdace] bg-white text-[#24483c] outline-none" />
+          <span class="self-center text-[#9bb0a2] font-bold">-</span>
+          <input type="text" maxlength="1" class="otp-input w-11 h-12 text-center text-xl font-bold font-mono rounded-xl border border-[#cbdace] bg-white text-[#24483c] outline-none" />
+          <input type="text" maxlength="1" class="otp-input w-11 h-12 text-center text-xl font-bold font-mono rounded-xl border border-[#cbdace] bg-white text-[#24483c] outline-none" />
+          <input type="text" maxlength="1" class="otp-input w-11 h-12 text-center text-xl font-bold font-mono rounded-xl border border-[#cbdace] bg-white text-[#24483c] outline-none" />
+        </div>
+        <p class="mt-2 text-center text-[11px] text-[#8ea095]">
+          <span class="font-semibold text-[#347d68]">Quick test code:</span> <code class="font-mono bg-[#edf2e9] px-1.5 py-0.5 rounded text-[#24483c]">123456</code> or any 6 digits
+        </p>
+      </div>
+
+      <div id="twoFactorChallengeError" class="hidden mt-3 rounded-lg bg-[#fae9e4] p-2 text-center text-xs font-medium text-[#b8584b]"></div>
+
+      <div class="mt-6 space-y-2.5">
+        <button id="verify2faChallengeBtn" class="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-bold text-white shadow-sm hover:bg-[#2d705d] transition">
+          <i data-lucide="lock-keyhole" class="h-4 w-4"></i> Verify &amp; Unlock Ledger
+        </button>
+        <button id="cancel2faChallengeBtn" class="w-full h-10 flex items-center justify-center rounded-xl text-xs font-semibold text-[#7e9086] hover:bg-[#f1f4ed] transition">
+          Cancel &amp; Back to Login
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- 3. MAIN DASHBOARD (When Logged In) -->
+  <!-- ========================================== -->
+  <div id="mainDashboard" class="hidden min-h-screen px-4 pb-12 pt-6 sm:px-7 lg:px-10">
+    <div class="mx-auto max-w-[1180px]">
+      
+      <!-- Top Application Header with User Profile & 2FA Status -->
+      <header class="mb-8 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="grid h-11 w-11 place-items-center rounded-2xl bg-[#dce9dc] text-[#347d68]">
+            <i data-lucide="wallet" class="h-5 w-5"></i>
+          </div>
+          <div>
+            <div class="font-display text-[19px] font-extrabold tracking-tight text-[#24483c]">
+              little ledger<span class="text-[#d78967]">.</span>
+            </div>
+            <div class="text-[10px] font-medium tracking-widest text-[#819087]">YOUR MONEY, IN PERSPECTIVE</div>
+          </div>
+        </div>
+
+        <!-- Right Side: 2FA Status Badge & User Profile Avatar Menu -->
+        <div class="flex items-center gap-3">
+          <!-- 2FA Indicator Badge -->
+          <button id="badge2faTrigger" class="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition" title="Click to manage 2FA settings">
+            <span id="badge2faDot" class="h-2 w-2 rounded-full"></span>
+            <span id="badge2faText">2FA Checking</span>
+          </button>
+
+          <!-- User Profile Dropdown Component -->
+          <div class="relative">
+            <button id="userMenuBtn" class="flex items-center gap-2.5 rounded-2xl border border-[#dce5dc] bg-white/90 p-1.5 pr-3 hover:bg-white transition shadow-sm">
+              <div id="userAvatar" class="grid h-8 w-8 place-items-center rounded-xl bg-[#347d68] text-xs font-bold text-white uppercase">
+                NA
+              </div>
+              <div class="hidden sm:block text-left">
+                <div id="userDisplayName" class="text-xs font-bold text-[#24483c] leading-tight">Nafin Ahmed</div>
+                <div id="userDisplayRole" class="text-[10px] text-[#7f9086] leading-tight">Personal Account</div>
+              </div>
+              <i data-lucide="chevron-down" class="h-3.5 w-3.5 text-[#86968c]"></i>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-56 rounded-2xl border border-[#dce5dc] bg-white p-2 shadow-xl z-40 animate-fade-in">
+              <div class="px-3 py-2 border-b border-[#edf0e9]">
+                <div id="dropdownUserName" class="text-xs font-bold text-[#24483c]">Nafin Ahmed</div>
+                <div id="dropdownUserEmail" class="text-[11px] text-[#819087] truncate">nafin@example.com</div>
+              </div>
+              <div class="py-1">
+                <button id="openSecurityBtn" class="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#355a4d] hover:bg-[#edf2e9] transition">
+                  <i data-lucide="shield-check" class="h-4 w-4 text-[#347d68]"></i>
+                  <span>Security &amp; 2FA Settings</span>
+                </button>
+              </div>
+              <div class="pt-1 border-t border-[#edf0e9]">
+                <button id="logoutBtn" class="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#b8584b] hover:bg-[#fae9e4] transition">
+                  <i data-lucide="log-out" class="h-4 w-4"></i>
+                  <span>Log Out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Title & Month Switcher -->
+      <section class="mb-5 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        <div>
+          <p class="mb-1 text-sm font-medium text-[#789086]">A little more clarity, every day.</p>
+          <h1 id="pageHeading" class="font-display text-[32px] font-bold leading-tight tracking-tight text-[#24483c] sm:text-[42px]">
+            Your money, <span class="text-[#d78967]">this month.</span>
+          </h1>
+        </div>
+        <div id="monthNavControls" class="flex w-full items-center justify-between gap-3 rounded-2xl border border-[#dce5dc] bg-[#fbfaf5]/90 p-2 sm:w-auto">
+          <button id="prevMonthBtn" class="grid h-9 w-9 place-items-center rounded-xl text-[#597369] hover:bg-[#edf2e9]">
+            <i data-lucide="arrow-left" class="h-4 w-4"></i>
+          </button>
+          <div class="flex items-center gap-2 px-2 text-sm font-semibold text-[#355a4d]">
+            <i data-lucide="calendar" class="h-4 w-4 text-[#789086]"></i>
+            <span id="currentMonthLabel">October 2026</span>
+          </div>
+          <button id="nextMonthBtn" class="grid h-9 w-9 place-items-center rounded-xl text-[#597369] hover:bg-[#edf2e9]">
+            <i data-lucide="arrow-right" class="h-4 w-4"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- View Tabs -->
+      <nav class="mb-5 flex rounded-2xl border border-[#dce5dc] bg-[#f3f4ed]/80 p-1">
+        <button id="tabMonthly" class="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-[#315548] shadow-sm transition">
+          <i data-lucide="calendar" class="h-4 w-4"></i> Monthly Ledger
+        </button>
+        <button id="tabYearly" class="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-[#819087] hover:text-[#355a4d] transition">
+          <i data-lucide="bar-chart-3" class="h-4 w-4"></i> Yearly Overview
+        </button>
+      </nav>
+
+      <!-- Monthly View -->
+      <div id="monthlyView">
+        <!-- Hero Income & Budget Overview Card -->
+        <section class="glass-card relative mb-5 overflow-hidden rounded-[26px] p-5 sm:p-7">
+          <div class="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rounded-full border border-[#dbe7d8]/80"></div>
+          <div class="pointer-events-none absolute -right-2 -top-10 h-44 w-44 rounded-full border border-[#e6ebe0]"></div>
+          
+          <div class="relative grid gap-7 md:grid-cols-[1.15fr_.85fr] md:items-center">
+            <div>
+              <div class="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#789086]">
+                <span class="h-[1px] w-5 bg-[#a3b8a8]"></span> Monthly income
+              </div>
+              
+              <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <div id="incomeDisplayGroup" class="flex items-baseline gap-2">
+                  <div id="incomeDisplay" class="font-display text-[43px] font-bold leading-none tracking-tight text-[#24483c] sm:text-[54px]">
+                    ৳7,000
+                  </div>
+                  <button id="editIncomeBtn" class="rounded-lg px-2.5 py-1 text-xs font-semibold text-[#628675] hover:bg-[#edf2e9]">Edit</button>
+                </div>
+
+                <form id="incomeEditForm" class="hidden items-center gap-2">
+                  <span class="font-display text-2xl font-bold text-[#24483c]">৳</span>
+                  <input id="incomeInput" type="number" min="0" step="100" class="h-11 w-36 rounded-xl border border-[#cbdace] bg-white px-3 text-lg font-semibold text-[#24483c] outline-none" />
+                  <button type="submit" class="h-9 rounded-lg bg-[#347d68] px-3.5 text-xs font-semibold text-white hover:bg-[#2d705d]">Save</button>
+                  <button id="cancelIncomeBtn" type="button" class="grid h-9 w-9 place-items-center rounded-lg text-[#768980] hover:bg-[#edf1e8]">✕</button>
+                </form>
+                <div class="text-sm text-[#819087]">per month</div>
+              </div>
+
+              <div class="mt-7 flex flex-wrap gap-x-9 gap-y-4">
+                <div>
+                  <div class="mb-1 text-xs text-[#819087]">Spent so far</div>
+                  <div id="totalSpentDisplay" class="font-display text-[22px] font-bold tracking-tight text-[#355a4d]">৳0</div>
+                </div>
+                <div>
+                  <div class="mb-1 text-xs text-[#819087]">Still yours</div>
+                  <div id="remainingDisplay" class="font-display text-[22px] font-bold tracking-tight text-[#347d68]">৳7,000</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Progress Widget -->
+            <div class="rounded-[20px] border border-white/70 bg-white/45 p-4 sm:p-5">
+              <div class="mb-3 flex items-center justify-between">
+                <span class="text-sm font-semibold text-[#446558]">Your month at a glance</span>
+                <span id="usageBadge" class="rounded-full bg-[#e1eee2] px-2.5 py-1 text-xs font-semibold text-[#39795e]">0% used</span>
+              </div>
+              <div class="h-3 overflow-hidden rounded-full bg-[#e6ebe3]">
+                <div id="usageProgressBar" class="h-full rounded-full bg-[#65a17d] transition-all duration-500" style="width: 0%"></div>
+              </div>
+              <div class="mt-2 flex justify-between text-[11px] text-[#8a9990]">
+                <span>৳0</span>
+                <span id="usageContextText">৳7,000 to go</span>
+                <span id="usageIncomeCap">৳7,000</span>
+              </div>
+              <p id="spendingAdvice" class="mt-4 flex items-center gap-2 text-xs leading-relaxed text-[#71857a]">
+                <i data-lucide="help-circle" class="h-3.5 w-3.5"></i>
+                A fresh page. Add your first expense when you’re ready.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2-Column: Expense Entry Form + Donut Breakdown -->
+        <div class="mb-5 grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
+          <!-- Form Section -->
+          <section class="glass-card rounded-[24px] p-5 sm:p-6">
+            <div class="mb-4">
+              <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-[#9a8c77]">A small note to self</p>
+              <h2 class="font-display text-[21px] font-bold tracking-tight text-[#294d40]">What did you spend?</h2>
+            </div>
+            <form id="expenseForm" class="space-y-3">
+              <div class="grid grid-cols-[1fr_1.05fr] gap-3">
+                <label class="block">
+                  <span class="mb-1.5 block text-[11px] font-semibold text-[#819087]">Amount</span>
+                  <div class="flex h-11 items-center rounded-xl border border-[#dce5dc] bg-[#fffdf8] px-3 focus-within:border-[#84a998]">
+                    <span class="mr-2 text-sm font-semibold text-[#779284]">৳</span>
+                    <input id="inputAmount" type="number" step="0.01" min="1" required placeholder="0.00" class="w-full bg-transparent text-sm font-semibold text-[#315548] outline-none placeholder:text-[#b7c0b9]" />
+                  </div>
+                </label>
+                <label class="block">
+                  <span class="mb-1.5 block text-[11px] font-semibold text-[#819087]">Date</span>
+                  <input id="inputDate" type="date" required class="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8] px-3 text-xs text-[#4d6c5e]" />
+                </label>
+              </div>
+
+              <div>
+                <label class="block">
+                  <span class="mb-1.5 block text-[11px] font-semibold text-[#819087]">Where it belongs</span>
+                  <select id="selectCategory" class="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8] px-3 text-sm text-[#4d6c5e]">
+                    <option value="Transportation">Transportation</option>
+                    <option value="Food">Food</option>
+                    <option value="Subscriptions">Subscriptions</option>
+                    <option value="Fitness / Protein">Fitness / Protein</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Miscellaneous">Miscellaneous</option>
+                  </select>
+                </label>
+              </div>
+
+              <label class="block">
+                <span class="mb-1.5 block text-[11px] font-semibold text-[#819087]">Tags <span class="font-normal">(e.g. #Uber, #Madchef, #iCloud)</span></span>
+                <input id="inputTags" type="text" placeholder="#Uber, #Snacks, #iCloud" class="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8] px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" />
+              </label>
+
+              <label class="block">
+                <span class="mb-1.5 block text-[11px] font-semibold text-[#819087]">A note <span class="font-normal">(optional)</span></span>
+                <input id="inputNote" type="text" placeholder="A quick detail to remember" class="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8] px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" />
+              </label>
+
+              <button type="submit" class="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-semibold text-white shadow-sm hover:bg-[#2d705d] transition">
+                <i data-lucide="plus" class="h-4 w-4"></i> Add to my ledger
+              </button>
+            </form>
+          </section>
+
+          <!-- Donut Breakdown -->
+          <section class="glass-card rounded-[24px] p-5 sm:p-6">
+            <div class="mb-4 flex items-end justify-between">
+              <div>
+                <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-[#9a8c77]">The shape of your spending</p>
+                <h2 class="font-display text-[21px] font-bold tracking-tight text-[#294d40]">Where it went</h2>
+              </div>
+              <span id="entryCountBadge" class="text-xs text-[#8a9990]">0 entries</span>
+            </div>
+
+            <div id="chartContainer" class="grid items-center gap-4 sm:grid-cols-[.9fr_1.1fr]">
+              <!-- SVG Donut Chart -->
+              <div class="relative flex h-[190px] items-center justify-center">
+                <svg id="donutSvg" class="h-44 w-44 -rotate-90 transform" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#e8ece4" stroke-width="14" />
+                </svg>
+                <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span id="donutCenterTotal" class="font-display text-[18px] font-bold text-[#315548]">৳0</span>
+                  <span class="text-[10px] text-[#8a9990]">total spent</span>
+                </div>
+              </div>
+              <!-- Category Legend -->
+              <div id="categoryLegendList" class="space-y-2.5 max-h-[200px] overflow-y-auto pr-1"></div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Ledger Table -->
+        <section class="glass-card rounded-[24px] p-5 sm:p-6">
+          <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-[#9a8c77]">The little details</p>
+              <h2 class="font-display text-[21px] font-bold tracking-tight text-[#294d40]">Your ledger</h2>
+            </div>
+            <button id="downloadCsvBtn" class="flex h-9 items-center gap-2 rounded-xl border border-[#dce5dc] bg-white/80 px-3.5 text-xs font-semibold text-[#537364] hover:bg-[#edf2e9]">
+              <i data-lucide="download" class="h-3.5 w-3.5"></i> Download CSV
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[650px] border-collapse text-left">
+              <thead>
+                <tr class="border-b border-[#e6ebe3] text-[10px] font-semibold uppercase tracking-wider text-[#95a198]">
+                  <th class="pb-3 pr-3">Date</th>
+                  <th class="pb-3 pr-3">Category</th>
+                  <th class="pb-3 pr-3">Tags</th>
+                  <th class="pb-3 pr-3">Note</th>
+                  <th class="pb-3 pr-3 text-right">Amount</th>
+                  <th class="pb-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="ledgerTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- Yearly View Container -->
+      <div id="yearlyView" class="hidden">
+        <div class="glass-card rounded-[24px] p-8 text-center">
+          <div class="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[#dce9dc] text-[#347d68]">
+            <i data-lucide="bar-chart-3" class="h-7 w-7"></i>
+          </div>
+          <h3 class="font-display text-2xl font-bold text-[#24483c]">Yearly Spending Overview</h3>
+          <p class="mt-2 text-sm text-[#789086] max-w-md mx-auto">
+            Aggregated annual reports and month-by-month spending comparisons for <span id="yearlyUserLabel" class="font-semibold text-[#24483c]">your account</span>.
+          </p>
+        </div>
+      </div>
+
+      <footer class="mt-12 flex items-center justify-center gap-2 text-[11px] text-[#93a097]">
+        <span>little ledger</span>
+        <span class="h-1 w-1 rounded-full bg-[#d78967]"></span>
+        <span>Your numbers never leave this device</span>
+      </footer>
+    </div>
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- 4. SECURITY & 2FA SETTINGS MODAL -->
+  <!-- ========================================== -->
+  <div id="securityModal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm grid place-items-center p-4">
+    <div class="glass-card max-w-lg w-full rounded-[28px] border border-white/80 p-6 sm:p-8 animate-fade-in bg-white/95 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-start justify-between pb-4 border-b border-[#edf0e9]">
+        <div class="flex items-center gap-3">
+          <div class="grid h-10 w-10 place-items-center rounded-xl bg-[#e3efe4] text-[#347d68]">
+            <i data-lucide="shield-check" class="h-5 w-5"></i>
+          </div>
+          <div>
+            <h2 class="font-display text-xl font-bold text-[#24483c]">Security &amp; 2FA Settings</h2>
+            <p class="text-xs text-[#758a7e]">Authenticator app (TOTP) protection</p>
+          </div>
+        </div>
+        <button id="closeSecurityModalBtn" class="grid h-8 w-8 place-items-center rounded-lg text-[#768980] hover:bg-[#edf1e8]">✕</button>
+      </div>
+
+      <!-- Current 2FA Status Banner -->
+      <div class="mt-5 p-4 rounded-2xl border flex items-center justify-between" id="modal2faBanner">
+        <div class="flex items-center gap-3">
+          <div id="modal2faIcon" class="grid h-8 w-8 place-items-center rounded-lg"></div>
+          <div>
+            <div id="modal2faStatusText" class="text-xs font-bold text-[#24483c]">Status</div>
+            <div id="modal2faSubText" class="text-[11px] text-[#718579]">Description</div>
+          </div>
+        </div>
+        <span id="modal2faPill" class="rounded-full px-2.5 py-1 text-[11px] font-bold"></span>
+      </div>
+
+      <!-- Section: 2FA Disabled -> Setup Flow Trigger -->
+      <div id="setup2faSection" class="mt-6 space-y-4">
+        <p class="text-xs text-[#627a6d] leading-relaxed">
+          Adding two-factor authentication adds an extra layer of protection to your ledger. Whenever you log in, you will be prompted to enter a 6-digit TOTP code.
+        </p>
+
+        <!-- 3-Step Wizard Container (Hidden until user clicks 'Start Setup') -->
+        <div id="wizard2faContainer" class="hidden rounded-2xl border border-[#cbdace] bg-[#fbfaf6] p-5 space-y-5">
+          <!-- Step 1: QR Code & Secret Key -->
+          <div>
+            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#347d68]">
+              <span class="grid h-5 w-5 place-items-center rounded-full bg-[#347d68] text-[10px] text-white">1</span>
+              <span>Scan QR Code or Enter Secret Key</span>
+            </div>
+            
+            <div class="mt-3 flex flex-col sm:flex-row items-center gap-4 p-3 bg-white rounded-xl border border-[#e4ebe2]">
+              <!-- Mock High-Fidelity SVG QR Code -->
+              <div class="shrink-0 bg-white p-2 rounded-lg border border-[#dce5dc] shadow-sm">
+                <svg width="112" height="112" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="28" height="28" fill="white"/>
+                  <!-- Position Markers -->
+                  <rect x="2" y="2" width="7" height="7" fill="#24483c" rx="1"/>
+                  <rect x="3.5" y="3.5" width="4" height="4" fill="white"/>
+                  <rect x="4.5" y="4.5" width="2" height="2" fill="#24483c"/>
+                  
+                  <rect x="19" y="2" width="7" height="7" fill="#24483c" rx="1"/>
+                  <rect x="20.5" y="3.5" width="4" height="4" fill="white"/>
+                  <rect x="21.5" y="4.5" width="2" height="2" fill="#24483c"/>
+
+                  <rect x="2" y="19" width="7" height="7" fill="#24483c" rx="1"/>
+                  <rect x="3.5" y="20.5" width="4" height="4" fill="white"/>
+                  <rect x="4.5" y="21.5" width="2" height="2" fill="#24483c"/>
+                  
+                  <!-- Sample Data Pixels -->
+                  <rect x="11" y="3" width="2" height="2" fill="#24483c"/>
+                  <rect x="15" y="4" width="2" height="2" fill="#24483c"/>
+                  <rect x="11" y="8" width="3" height="1" fill="#24483c"/>
+                  <rect x="4" y="11" width="2" height="2" fill="#24483c"/>
+                  <rect x="8" y="13" width="2" height="3" fill="#24483c"/>
+                  <rect x="13" y="11" width="3" height="3" fill="#347d68"/>
+                  <rect x="18" y="11" width="2" height="2" fill="#24483c"/>
+                  <rect x="23" y="13" width="2" height="2" fill="#24483c"/>
+                  <rect x="11" y="17" width="2" height="2" fill="#24483c"/>
+                  <rect x="15" y="18" width="3" height="2" fill="#24483c"/>
+                  <rect x="11" y="22" width="3" height="2" fill="#24483c"/>
+                  <rect x="16" y="23" width="2" height="2" fill="#24483c"/>
+                  <rect x="21" y="18" width="2" height="4" fill="#24483c"/>
+                  <rect x="24" y="24" width="2" height="2" fill="#24483c"/>
+                </svg>
+              </div>
+
+              <div class="text-left w-full min-w-0">
+                <div class="text-[11px] text-[#718579]">Can't scan? Enter this key manually:</div>
+                <div class="mt-1 flex items-center justify-between rounded-lg bg-[#edf2e9] px-2.5 py-1.5 font-mono text-xs font-bold text-[#24483c]">
+                  <span id="setupSecretKeyDisplay" class="truncate">BD-EXPENSE-2FA-7839</span>
+                  <button id="copySecretKeyBtn" class="ml-2 text-[#347d68] hover:text-[#24483c]" title="Copy Secret">
+                    <i data-lucide="copy" class="h-3.5 w-3.5"></i>
+                  </button>
+                </div>
+                <div id="copySuccessMsg" class="hidden mt-1 text-[10px] text-[#347d68] font-semibold">✓ Copied to clipboard!</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Verification Input -->
+          <div>
+            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#347d68]">
+              <span class="grid h-5 w-5 place-items-center rounded-full bg-[#347d68] text-[10px] text-white">2</span>
+              <span>Enter 6-Digit Verification Code</span>
+            </div>
+            <p class="mt-1 text-[11px] text-[#718579]">Type the 6-digit number shown on your authenticator app.</p>
+            
+            <div class="mt-2.5 flex items-center gap-2">
+              <input id="verifySetupCodeInput" type="text" maxlength="6" placeholder="123456"
+                class="h-11 w-44 rounded-xl border border-[#cbdace] bg-white px-3 text-center font-mono text-lg font-bold tracking-widest text-[#24483c] outline-none" />
+              <button id="confirmEnable2faBtn" class="h-11 px-4 flex-1 rounded-xl bg-[#347d68] text-xs font-bold text-white shadow-sm hover:bg-[#2d705d] transition">
+                Verify &amp; Enable 2FA
+              </button>
+            </div>
+            <p class="mt-1.5 text-[10px] text-[#819087]">Demo tip: Enter <code class="font-mono bg-[#edf2e9] px-1 py-0.5 rounded text-[#24483c]">123456</code> to activate instantly.</p>
+          </div>
+        </div>
+
+        <button id="start2faSetupBtn" class="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-bold text-white shadow-sm hover:bg-[#2d705d] transition">
+          <i data-lucide="plus-circle" class="h-4 w-4"></i>
+          <span>Set Up Two-Factor Authentication</span>
+        </button>
+      </div>
+
+      <!-- Section: 2FA Active -> Management / Disable -->
+      <div id="active2faSection" class="hidden mt-6 space-y-4">
+        <div class="rounded-2xl bg-[#edf2e9] p-4 text-xs text-[#355a4d] leading-relaxed">
+          <p class="font-semibold text-sm mb-1 text-[#24483c]">Your account is fully secured ✅</p>
+          Each time you sign in to this device or any new browser session, a 6-digit TOTP code will be required.
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-[#718579] px-1">
+          <span>Active Secret:</span>
+          <span id="activeSecretDisplay" class="font-mono font-bold text-[#24483c]">BD-EXPENSE-2FA-****</span>
+        </div>
+
+        <button id="disable2faBtn" class="w-full h-11 flex items-center justify-center gap-2 rounded-xl border border-[#f0c4bb] bg-[#fae9e4] text-xs font-bold text-[#b8584b] hover:bg-[#f6dad3] transition">
+          <i data-lucide="shield-x" class="h-4 w-4"></i>
+          <span>Disable Two-Factor Authentication</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT: AUTH & STATE ENGINE -->
+  <!-- ========================================== -->
+  <script>
+    // ------------------------------------
+    // STORAGE KEYS & CONSTANTS
+    // ------------------------------------
+    const STORAGE_USERS = 'little-ledger-users-v2';
+    const STORAGE_SESSION = 'little-ledger-session-v2';
+    const DEFAULT_MONTHLY_INCOME = 7000;
+
+    const CATEGORY_COLORS = {
+      'Transportation': '#347d68',
+      'Food': '#df8b68',
+      'Subscriptions': '#d4ad48',
+      'Fitness / Protein': '#6f9aaf',
+      'Shopping': '#a088aa',
+      'Bills': '#8b9c75',
+      'Miscellaneous': '#cc7669'
+    };
+
+    // Default Seed Users
+    const DEFAULT_USERS = [
+      {
+        id: 'usr_nafin',
+        name: 'Nafin Ahmed',
+        email: 'demo@ledger.bd',
+        password: 'demo123',
+        twoFactorEnabled: false,
+        twoFactorSecret: 'BD-EXPENSE-2FA-9842',
+      }
+    ];
+
+    // Seed Data for new or demo users
+    const SAMPLE_EXPENSES = [
+      { id: '1', date: '2026-10-01', amount: 350, category: 'Transportation', note: 'Uber to Dhanmondi', tags: ['Uber'] },
+      { id: '2', date: '2026-10-01', amount: 620, category: 'Food', note: 'Lunch at Madchef', tags: ['Madchef', 'Burger'] },
+      { id: '3', date: '2026-10-02', amount: 1200, category: 'Subscriptions', note: 'iCloud + CapCut Pro', tags: ['iCloud', 'CapCut'] },
+      { id: '4', date: '2026-10-03', amount: 2080, category: 'Fitness / Protein', note: 'Optimum Nutrition Protein', tags: ['WheyProtein', 'Gym'] },
+    ];
+
+    // ------------------------------------
+    // APPLICATION STATE
+    // ------------------------------------
+    let currentUser = null; // null when logged out, or user object
+    let pending2faUser = null; // user waiting for TOTP verification during login
+    let monthlyIncome = DEFAULT_MONTHLY_INCOME;
+    let expenses = [];
+
+    // Helper functions for user storage
+    function getUsers() {
+      try {
+        const data = localStorage.getItem(STORAGE_USERS);
+        return data ? JSON.parse(data) : DEFAULT_USERS;
+      } catch {
+        return DEFAULT_USERS;
+      }
+    }
+
+    function saveUsers(users) {
+      localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+    }
+
+    function getSession() {
+      try {
+        const data = localStorage.getItem(STORAGE_SESSION);
+        return data ? JSON.parse(data) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function saveSession(session) {
+      if (session) {
+        localStorage.setItem(STORAGE_SESSION, JSON.stringify(session));
+      } else {
+        localStorage.removeItem(STORAGE_SESSION);
+      }
+    }
+
+    // User-scoped data keys
+    function getUserExpensesKey(userId) {
+      return `little-ledger-expenses-usr-${userId}`;
+    }
+    function getUserIncomeKey(userId) {
+      return `little-ledger-income-usr-${userId}`;
+    }
+
+    function loadUserData(userId) {
+      const savedExpenses = localStorage.getItem(getUserExpensesKey(userId));
+      expenses = savedExpenses ? JSON.parse(savedExpenses) : [...SAMPLE_EXPENSES];
+
+      const savedIncome = localStorage.getItem(getUserIncomeKey(userId));
+      monthlyIncome = savedIncome ? parseFloat(savedIncome) : DEFAULT_MONTHLY_INCOME;
+    }
+
+    function persistUserData() {
+      if (!currentUser) return;
+      localStorage.setItem(getUserExpensesKey(currentUser.id), JSON.stringify(expenses));
+      localStorage.setItem(getUserIncomeKey(currentUser.id), String(monthlyIncome));
+    }
+
+    // ------------------------------------
+    // INITIALIZATION & SESSION RESTORE
+    // ------------------------------------
+    function init() {
+      // Ensure seed users exist in local storage
+      if (!localStorage.getItem(STORAGE_USERS)) {
+        saveUsers(DEFAULT_USERS);
+      }
+
+      // Check existing session
+      const session = getSession();
+      if (session && session.user) {
+        // Refresh user object from stored users
+        const users = getUsers();
+        const found = users.find(u => u.id === session.user.id) || session.user;
+        loginSuccess(found, session.isGuest || false);
+      } else {
+        showAuthScreen();
+      }
+
+      setupOtpInputHandlers();
+    }
+
+    // ------------------------------------
+    // AUTHENTICATION SCREEN CONTROLS
+    // ------------------------------------
+    const authScreen = document.getElementById('authScreen');
+    const mainDashboard = document.getElementById('mainDashboard');
+    const authTabLogin = document.getElementById('authTabLogin');
+    const authTabSignup = document.getElementById('authTabSignup');
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const authNotice = document.getElementById('authNotice');
+
+    function showAuthScreen() {
+      authScreen.classList.remove('hidden');
+      mainDashboard.classList.add('hidden');
+      currentUser = null;
+      lucide.createIcons();
+    }
+
+    function showNotice(msg, isError = true) {
+      authNotice.textContent = msg;
+      authNotice.className = isError
+        ? 'mb-4 rounded-xl p-3 text-xs leading-relaxed bg-[#fae9e4] border border-[#f5cfc7] text-[#b8584b]'
+        : 'mb-4 rounded-xl p-3 text-xs leading-relaxed bg-[#e8f2e7] border border-[#cbe4c8] text-[#347d68]';
+      authNotice.classList.remove('hidden');
+    }
+
+    function clearNotice() {
+      authNotice.classList.add('hidden');
+    }
+
+    // Tab switching in Auth Screen
+    authTabLogin.addEventListener('click', () => {
+      authTabLogin.className = 'flex h-10 flex-1 items-center justify-center rounded-xl bg-white text-xs font-bold text-[#24483c] shadow-sm transition';
+      authTabSignup.className = 'flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-semibold text-[#7a8d81] hover:text-[#24483c] transition';
+      loginForm.classList.remove('hidden');
+      signupForm.classList.add('hidden');
+      clearNotice();
+    });
+
+    authTabSignup.addEventListener('click', () => {
+      authTabSignup.className = 'flex h-10 flex-1 items-center justify-center rounded-xl bg-white text-xs font-bold text-[#24483c] shadow-sm transition';
+      authTabLogin.className = 'flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-semibold text-[#7a8d81] hover:text-[#24483c] transition';
+      signupForm.classList.remove('hidden');
+      loginForm.classList.add('hidden');
+      clearNotice();
+    });
+
+    // Handle Login Submit
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      clearNotice();
+      const loginId = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+
+      const users = getUsers();
+      const user = users.find(u => 
+        (u.email.toLowerCase() === loginId.toLowerCase() || u.name.toLowerCase() === loginId.toLowerCase()) && 
+        u.password === pass
+      );
+
+      if (!user) {
+        showNotice('Invalid email/username or password. Please try again.');
+        return;
+      }
+
+      // Check if 2FA is required for this account
+      if (user.twoFactorEnabled) {
+        prompt2faChallenge(user);
+      } else {
+        loginSuccess(user, false);
+      }
+    });
+
+    // Handle Sign Up Submit
+    signupForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      clearNotice();
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const pass = document.getElementById('signupPassword').value;
+
+      const users = getUsers();
+      if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+        showNotice('An account with this email already exists. Please log in.');
+        return;
+      }
+
+      const randomDigits = Math.floor(1000 + Math.random() * 9000);
+      const newUser = {
+        id: 'usr_' + Date.now(),
+        name,
+        email,
+        password: pass,
+        twoFactorEnabled: false,
+        twoFactorSecret: `BD-EXPENSE-2FA-${randomDigits}`,
+      };
+
+      users.push(newUser);
+      saveUsers(users);
+
+      loginSuccess(newUser, false);
+    });
+
+    // Demo Login & Guest Mode
+    document.getElementById('demoLoginBtn').addEventListener('click', () => {
+      const users = getUsers();
+      let demoUser = users.find(u => u.email === 'demo@ledger.bd');
+      if (!demoUser) {
+        demoUser = DEFAULT_USERS[0];
+        users.push(demoUser);
+        saveUsers(users);
+      }
+
+      if (demoUser.twoFactorEnabled) {
+        prompt2faChallenge(demoUser);
+      } else {
+        loginSuccess(demoUser, false);
+      }
+    });
+
+    document.getElementById('guestLoginBtn').addEventListener('click', () => {
+      const guestUser = {
+        id: 'guest',
+        name: 'Guest User',
+        email: 'guest@device.local',
+        twoFactorEnabled: false,
+      };
+      loginSuccess(guestUser, true);
+    });
+
+    // ------------------------------------
+    // SOCIAL LOGIN (Mock OAuth)
+    // ------------------------------------
+    function handleSocialLogin(provider) {
+      const btn = document.getElementById(provider + 'LoginBtn');
+      const originalHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      btn.innerHTML = `
+        <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <span>Connecting to ${provider === 'google' ? 'Google' : 'Apple'}...</span>
+      `;
+
+      setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        btn.style.opacity = '1';
+
+        const providerName = provider === 'google' ? 'Google' : 'Apple';
+        const socialUser = {
+          id: provider + '_' + Date.now(),
+          name: provider === 'google' ? 'Nafin (Google)' : 'Nafin (Apple)',
+          email: provider === 'google' ? 'nafin@gmail.com' : 'nafin@icloud.com',
+          twoFactorEnabled: false,
+          provider: providerName,
+        };
+
+        const users = getUsers();
+        const existing = users.find(u => u.email === socialUser.email);
+        if (existing) {
+          loginSuccess(existing, false);
+        } else {
+          users.push(socialUser);
+          saveUsers(users);
+          loginSuccess(socialUser, false);
+        }
+      }, 1200);
+    }
+
+    document.getElementById('googleLoginBtn').addEventListener('click', () => handleSocialLogin('google'));
+    document.getElementById('appleLoginBtn').addEventListener('click', () => handleSocialLogin('apple'));
+
+    // ------------------------------------
+    // TWO-FACTOR (2FA) CHALLENGE MODAL
+    // ------------------------------------
+    const twoFactorChallengeModal = document.getElementById('twoFactorChallengeModal');
+    const twoFactorChallengeError = document.getElementById('twoFactorChallengeError');
+
+    function prompt2faChallenge(user) {
+      pending2faUser = user;
+      twoFactorChallengeError.classList.add('hidden');
+      twoFactorChallengeModal.classList.remove('hidden');
+
+      // Clear previous OTP boxes
+      const inputs = document.querySelectorAll('#otpInputGroup .otp-input');
+      inputs.forEach(inp => inp.value = '');
+      inputs[0]?.focus();
+      lucide.createIcons();
+    }
+
+    document.getElementById('cancel2faChallengeBtn').addEventListener('click', () => {
+      twoFactorChallengeModal.classList.add('hidden');
+      pending2faUser = null;
+    });
+
+    document.getElementById('verify2faChallengeBtn').addEventListener('click', () => {
+      verifyOtpChallenge();
+    });
+
+    function setupOtpInputHandlers() {
+      const inputs = document.querySelectorAll('#otpInputGroup .otp-input');
+      inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+          if (e.target.value.length === 1 && index < inputs.length - 1) {
+            inputs[index + 1].focus();
+          }
+          checkAutoSubmitOtp();
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !e.target.value && index > 0) {
+            inputs[index - 1].focus();
+          }
+        });
+
+        // Allow paste of 6 digits
+        input.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();
+          if (/^\d{6}$/.test(pasteData)) {
+            pasteData.split('').forEach((char, i) => {
+              if (inputs[i]) inputs[i].value = char;
+            });
+            verifyOtpChallenge();
+          }
+        });
+      });
+    }
+
+    function checkAutoSubmitOtp() {
+      const inputs = document.querySelectorAll('#otpInputGroup .otp-input');
+      const fullCode = Array.from(inputs).map(i => i.value).join('');
+      if (fullCode.length === 6) {
+        verifyOtpChallenge();
+      }
+    }
+
+    function verifyOtpChallenge() {
+      const inputs = document.querySelectorAll('#otpInputGroup .otp-input');
+      const enteredCode = Array.from(inputs).map(i => i.value).join('');
+
+      if (!enteredCode || enteredCode.length < 6) {
+        twoFactorChallengeError.textContent = 'Please enter all 6 digits.';
+        twoFactorChallengeError.classList.remove('hidden');
+        return;
+      }
+
+      // Allow any 6 digit test code or standard TOTP '123456'
+      if (enteredCode === '123456' || enteredCode.length === 6) {
+        twoFactorChallengeModal.classList.add('hidden');
+        const userToLogin = pending2faUser;
+        pending2faUser = null;
+        loginSuccess(userToLogin, false);
+      } else {
+        twoFactorChallengeError.textContent = 'Invalid verification code. Try test code: 123456.';
+        twoFactorChallengeError.classList.remove('hidden');
+      }
+    }
+
+    // ------------------------------------
+    // SUCCESSFUL LOGIN & DASHBOARD MOUNT
+    // ------------------------------------
+    function loginSuccess(user, isGuest = false) {
+      currentUser = user;
+
+      // Save Session
+      const remember = document.getElementById('rememberMeCheck')?.checked ?? true;
+      if (remember || isGuest) {
+        saveSession({ user, isGuest });
+      }
+
+      // Load user's data
+      loadUserData(user.id);
+
+      // Transition UI
+      authScreen.classList.add('hidden');
+      mainDashboard.classList.remove('hidden');
+
+      // Update User Profile Header
+      updateHeaderProfile(user, isGuest);
+
+      // Render Ledger
+      render();
+      lucide.createIcons();
+    }
+
+    function updateHeaderProfile(user, isGuest) {
+      const initials = isGuest ? 'GU' : user.name.split(' ').map(p => p[0]).join('').slice(0, 2);
+      document.getElementById('userAvatar').textContent = initials;
+      document.getElementById('userDisplayName').textContent = user.name;
+      document.getElementById('userDisplayRole').textContent = isGuest ? 'Guest Mode (Local)' : 'Personal Account';
+      document.getElementById('dropdownUserName').textContent = user.name;
+      document.getElementById('dropdownUserEmail').textContent = isGuest ? 'Guest Mode (Device Only)' : user.email;
+      document.getElementById('yearlyUserLabel').textContent = user.name;
+
+      // Update 2FA Badge
+      update2faBadge(user.twoFactorEnabled);
+    }
+
+    function update2faBadge(enabled) {
+      const trigger = document.getElementById('badge2faTrigger');
+      const dot = document.getElementById('badge2faDot');
+      const text = document.getElementById('badge2faText');
+
+      if (enabled) {
+        trigger.className = 'flex items-center gap-1.5 rounded-full border border-[#c6e4c7] bg-[#eef7ee] px-3 py-1 text-xs font-semibold text-[#347d68] hover:bg-[#e3f2e2] transition shadow-sm';
+        dot.className = 'h-2 w-2 rounded-full bg-[#347d68] animate-pulse';
+        text.textContent = '2FA Enabled ✅';
+      } else {
+        trigger.className = 'flex items-center gap-1.5 rounded-full border border-[#e5e4d7] bg-[#fdfcf7] px-3 py-1 text-xs font-semibold text-[#8b8a6a] hover:bg-[#f6f5ea] transition shadow-sm';
+        dot.className = 'h-2 w-2 rounded-full bg-[#c7b96b]';
+        text.textContent = '2FA Inactive ⚠️';
+      }
+    }
+
+    // ------------------------------------
+    // USER PROFILE DROPDOWN & LOGOUT
+    // ------------------------------------
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    const userDropdownMenu = document.getElementById('userDropdownMenu');
+
+    userMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      userDropdownMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', () => {
+      userDropdownMenu.classList.add('hidden');
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      userDropdownMenu.classList.add('hidden');
+      saveSession(null);
+      showAuthScreen();
+    });
+
+    // ------------------------------------
+    // 2FA SETTINGS MODAL & WIZARD
+    // ------------------------------------
+    const securityModal = document.getElementById('securityModal');
+    const openSecurityBtn = document.getElementById('openSecurityBtn');
+    const closeSecurityModalBtn = document.getElementById('closeSecurityModalBtn');
+    const badge2faTrigger = document.getElementById('badge2faTrigger');
+
+    function openSecurityModal() {
+      userDropdownMenu.classList.add('hidden');
+      securityModal.classList.remove('hidden');
+      refreshSecurityModalUI();
+      lucide.createIcons();
+    }
+
+    openSecurityBtn.addEventListener('click', openSecurityModal);
+    badge2faTrigger.addEventListener('click', openSecurityModal);
+
+    closeSecurityModalBtn.addEventListener('click', () => {
+      securityModal.classList.add('hidden');
+    });
+
+    function refreshSecurityModalUI() {
+      if (!currentUser) return;
+      const isEnabled = Boolean(currentUser.twoFactorEnabled);
+
+      const banner = document.getElementById('modal2faBanner');
+      const icon = document.getElementById('modal2faIcon');
+      const statusText = document.getElementById('modal2faStatusText');
+      const subText = document.getElementById('modal2faSubText');
+      const pill = document.getElementById('modal2faPill');
+      const setupSection = document.getElementById('setup2faSection');
+      const activeSection = document.getElementById('active2faSection');
+      const wizardContainer = document.getElementById('wizard2faContainer');
+
+      if (isEnabled) {
+        banner.className = 'mt-5 p-4 rounded-2xl border border-[#c7e5c9] bg-[#edf7ee] flex items-center justify-between';
+        icon.className = 'grid h-8 w-8 place-items-center rounded-lg bg-[#347d68] text-white';
+        icon.innerHTML = '<i data-lucide="shield-check" class="h-4 w-4"></i>';
+        statusText.textContent = 'Two-Factor Authentication is Active';
+        subText.textContent = 'Your login is protected with a 6-digit authenticator code.';
+        pill.className = 'rounded-full bg-[#347d68] text-white px-2.5 py-1 text-[11px] font-bold';
+        pill.textContent = 'Enabled';
+
+        setupSection.classList.add('hidden');
+        activeSection.classList.remove('hidden');
+        document.getElementById('activeSecretDisplay').textContent = currentUser.twoFactorSecret || 'BD-EXPENSE-2FA-9842';
+      } else {
+        banner.className = 'mt-5 p-4 rounded-2xl border border-[#e6ebe3] bg-[#fbfaf6] flex items-center justify-between';
+        icon.className = 'grid h-8 w-8 place-items-center rounded-lg bg-[#e2ece0] text-[#718579]';
+        icon.innerHTML = '<i data-lucide="shield-alert" class="h-4 w-4"></i>';
+        statusText.textContent = 'Two-Factor Authentication is Disabled';
+        subText.textContent = 'Enable 2FA to prevent unauthorized access to your records.';
+        pill.className = 'rounded-full bg-[#eaebe3] text-[#738278] px-2.5 py-1 text-[11px] font-bold';
+        pill.textContent = 'Not Enabled';
+
+        setupSection.classList.remove('hidden');
+        activeSection.classList.add('hidden');
+        wizardContainer.classList.add('hidden');
+        document.getElementById('start2faSetupBtn').classList.remove('hidden');
+
+        // Set current secret for setup
+        document.getElementById('setupSecretKeyDisplay').textContent = currentUser.twoFactorSecret || 'BD-EXPENSE-2FA-7839';
+      }
+
+      lucide.createIcons();
+    }
+
+    // Start 2FA Setup Flow
+    document.getElementById('start2faSetupBtn').addEventListener('click', () => {
+      document.getElementById('wizard2faContainer').classList.remove('hidden');
+      document.getElementById('start2faSetupBtn').classList.add('hidden');
+      document.getElementById('verifySetupCodeInput').focus();
+    });
+
+    // Copy secret key
+    document.getElementById('copySecretKeyBtn').addEventListener('click', () => {
+      const key = document.getElementById('setupSecretKeyDisplay').textContent;
+      navigator.clipboard.writeText(key).then(() => {
+        const msg = document.getElementById('copySuccessMsg');
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 2500);
+      });
+    });
+
+    // Confirm & Enable 2FA
+    document.getElementById('confirmEnable2faBtn').addEventListener('click', () => {
+      const code = document.getElementById('verifySetupCodeInput').value.trim();
+      if (!code || code.length < 6) {
+        alert('Please enter a 6-digit code from your authenticator app (e.g. 123456).');
+        return;
+      }
+
+      // Update user state
+      currentUser.twoFactorEnabled = true;
+
+      // Persist in Users list
+      const users = getUsers();
+      const idx = users.findIndex(u => u.id === currentUser.id);
+      if (idx !== -1) {
+        users[idx].twoFactorEnabled = true;
+        saveUsers(users);
+      }
+
+      // Save Session
+      saveSession({ user: currentUser, isGuest: false });
+
+      update2faBadge(true);
+      refreshSecurityModalUI();
+      alert('Success! Two-Factor Authentication is now enabled for your account.');
+    });
+
+    // Disable 2FA
+    document.getElementById('disable2faBtn').addEventListener('click', () => {
+      if (!confirm('Are you sure you want to disable Two-Factor Authentication?')) return;
+
+      currentUser.twoFactorEnabled = false;
+
+      const users = getUsers();
+      const idx = users.findIndex(u => u.id === currentUser.id);
+      if (idx !== -1) {
+        users[idx].twoFactorEnabled = false;
+        saveUsers(users);
+      }
+
+      saveSession({ user: currentUser, isGuest: false });
+
+      update2faBadge(false);
+      refreshSecurityModalUI();
+    });
+
+    // ------------------------------------
+    // EXPENSE TRACKER LEDGER ENGINE
+    // ------------------------------------
+    function fmtMoney(amount) {
+      return '৳' + Number(amount).toLocaleString('en-BD', { maximumFractionDigits: 2 });
+    }
+
+    function render() {
+      // Calculate totals
+      const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
+      const remaining = monthlyIncome - totalSpent;
+      const usagePercent = monthlyIncome > 0 ? Math.min(100, Math.round((totalSpent / monthlyIncome) * 100)) : 100;
+
+      // Update Header & Hero
+      document.getElementById('incomeDisplay').textContent = fmtMoney(monthlyIncome);
+      document.getElementById('totalSpentDisplay').textContent = fmtMoney(totalSpent);
+
+      const remEl = document.getElementById('remainingDisplay');
+      remEl.textContent = remaining < 0 ? '−' + fmtMoney(Math.abs(remaining)) : fmtMoney(remaining);
+      remEl.className = `font-display text-[22px] font-bold tracking-tight ${remaining < 0 ? 'text-[#b8584b]' : 'text-[#347d68]'}`;
+
+      // Progress Bar
+      const pBar = document.getElementById('usageProgressBar');
+      const badge = document.getElementById('usageBadge');
+      pBar.style.width = usagePercent + '%';
+      badge.textContent = `${usagePercent}% used`;
+
+      if (remaining < 0 || usagePercent > 90) {
+        pBar.className = 'h-full rounded-full bg-[#c85f51] transition-all duration-500';
+        badge.className = 'rounded-full bg-[#fae5df] px-2.5 py-1 text-xs font-semibold text-[#a7463c]';
+      } else if (usagePercent >= 70) {
+        pBar.className = 'h-full rounded-full bg-[#d9b74f] transition-all duration-500';
+        badge.className = 'rounded-full bg-[#f6edcf] px-2.5 py-1 text-xs font-semibold text-[#927629]';
+      } else {
+        pBar.className = 'h-full rounded-full bg-[#65a17d] transition-all duration-500';
+        badge.className = 'rounded-full bg-[#e1eee2] px-2.5 py-1 text-xs font-semibold text-[#39795e]';
+      }
+
+      document.getElementById('usageContextText').textContent = remaining < 0
+        ? `${fmtMoney(Math.abs(remaining))} over`
+        : `${fmtMoney(remaining)} to go`;
+      document.getElementById('usageIncomeCap').textContent = fmtMoney(monthlyIncome);
+      document.getElementById('entryCountBadge').textContent = `${expenses.length} ${expenses.length === 1 ? 'entry' : 'entries'}`;
+
+      // Render Donut Chart & Category Legend
+      renderDonutChart(totalSpent);
+
+      // Render Table
+      renderTable();
+      lucide.createIcons();
+    }
+
+    function renderDonutChart(totalSpent) {
+      document.getElementById('donutCenterTotal').textContent = fmtMoney(totalSpent);
+      const catTotals = {};
+      expenses.forEach(e => {
+        catTotals[e.category] = (catTotals[e.category] || 0) + e.amount;
+      });
+
+      const categories = Object.keys(catTotals);
+      const svg = document.getElementById('donutSvg');
+      svg.querySelectorAll('.donut-segment').forEach(el => el.remove());
+
+      const legendList = document.getElementById('categoryLegendList');
+      legendList.innerHTML = '';
+
+      if (totalSpent === 0 || categories.length === 0) {
+        legendList.innerHTML = '<p class="text-xs text-[#8a9990] py-4 text-center">No expenses recorded yet.</p>';
+        return;
+      }
+
+      const circumference = 2 * Math.PI * 38; // ~238.76
+      let accumulatedPercent = 0;
+
+      categories.forEach(cat => {
+        const amount = catTotals[cat];
+        const percent = amount / totalSpent;
+        const strokeLength = percent * circumference;
+        const color = CATEGORY_COLORS[cat] || '#8b9c75';
+
+        // SVG Segment
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('class', 'donut-segment');
+        circle.setAttribute('cx', '50');
+        circle.setAttribute('cy', '50');
+        circle.setAttribute('r', '38');
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke', color);
+        circle.setAttribute('stroke-width', '14');
+        circle.setAttribute('stroke-dasharray', `${strokeLength} ${circumference}`);
+        circle.setAttribute('stroke-dashoffset', `-${accumulatedPercent * circumference}`);
+        svg.appendChild(circle);
+
+        accumulatedPercent += percent;
+
+        // Legend row
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between gap-2';
+        row.innerHTML = `
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="h-2.5 w-2.5 rounded-full shrink-0" style="background-color: ${color}"></span>
+            <span class="truncate text-xs text-[#62796d]">${cat}</span>
+          </div>
+          <span class="text-xs font-semibold text-[#355a4d]">${fmtMoney(amount)}</span>
+        `;
+        legendList.appendChild(row);
+      });
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('ledgerTableBody');
+      tbody.innerHTML = '';
+
+      if (expenses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-[#87968c]">Your ledger is empty.</td></tr>`;
+        return;
+      }
+
+      expenses.slice().reverse().forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-[#edf0e9] hover:bg-[#f7f7f0]/65 transition';
+        const color = CATEGORY_COLORS[item.category] || '#628675';
+        const tagsHtml = (item.tags || []).map(t => `<span class="rounded-md bg-[#edf2e9] px-1.5 py-0.5 text-[10px] text-[#628675]">#${t}</span>`).join(' ');
+
+        tr.innerHTML = `
+          <td class="py-3.5 pr-3 text-xs text-[#74877d]">${item.date}</td>
+          <td class="py-3.5 pr-3 text-xs font-medium text-[#4d6c5e]">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="h-2 w-2 rounded-full" style="background-color: ${color}"></span>${item.category}
+            </span>
+          </td>
+          <td class="py-3.5 pr-3"><div class="flex flex-wrap gap-1">${tagsHtml}</div></td>
+          <td class="py-3.5 pr-3 text-xs text-[#93a097] max-w-[160px] truncate">${item.note || '—'}</td>
+          <td class="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">${fmtMoney(item.amount)}</td>
+          <td class="py-3.5 text-right">
+            <button onclick="deleteExpense('${item.id}')" class="rounded-lg p-1 text-[#a88e87] hover:bg-[#f8e9e4] hover:text-[#ba5b4d]" title="Delete Entry">
+              <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.deleteExpense = function (id) {
+      expenses = expenses.filter(e => e.id !== id);
+      persistUserData();
+      render();
+    };
+
+    // Form submission
+    document.getElementById('expenseForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('inputAmount').value);
+      const date = document.getElementById('inputDate').value;
+      const category = document.getElementById('selectCategory').value;
+      const note = document.getElementById('inputNote').value;
+      const tagsRaw = document.getElementById('inputTags').value;
+      const tags = tagsRaw.split(/[\s,]+/).map(t => t.replace(/^#+/, '').trim()).filter(Boolean);
+
+      if (!amount || amount <= 0 || !date) return;
+
+      expenses.push({
+        id: String(Date.now()),
+        date,
+        amount,
+        category,
+        note,
+        tags
+      });
+
+      persistUserData();
+      document.getElementById('inputAmount').value = '';
+      document.getElementById('inputNote').value = '';
+      document.getElementById('inputTags').value = '';
+      render();
+    });
+
+    // Edit income handlers
+    const editBtn = document.getElementById('editIncomeBtn');
+    const incomeDisplayGroup = document.getElementById('incomeDisplayGroup');
+    const incomeEditForm = document.getElementById('incomeEditForm');
+    const incomeInput = document.getElementById('incomeInput');
+    const cancelIncomeBtn = document.getElementById('cancelIncomeBtn');
+
+    editBtn.addEventListener('click', () => {
+      incomeInput.value = monthlyIncome;
+      incomeDisplayGroup.classList.add('hidden');
+      incomeEditForm.classList.remove('hidden');
+      incomeEditForm.classList.add('flex');
+      incomeInput.focus();
+    });
+
+    cancelIncomeBtn.addEventListener('click', () => {
+      incomeEditForm.classList.add('hidden');
+      incomeEditForm.classList.remove('flex');
+      incomeDisplayGroup.classList.remove('hidden');
+    });
+
+    incomeEditForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const val = parseFloat(incomeInput.value);
+      if (val >= 0) {
+        monthlyIncome = val;
+        persistUserData();
+        render();
+      }
+      incomeEditForm.classList.add('hidden');
+      incomeEditForm.classList.remove('flex');
+      incomeDisplayGroup.classList.remove('hidden');
+    });
+
+    // View Switching
+    const tabMonthly = document.getElementById('tabMonthly');
+    const tabYearly = document.getElementById('tabYearly');
+    const monthlyView = document.getElementById('monthlyView');
+    const yearlyView = document.getElementById('yearlyView');
+    const pageHeading = document.getElementById('pageHeading');
+    const monthNavControls = document.getElementById('monthNavControls');
+
+    tabMonthly.addEventListener('click', () => {
+      tabMonthly.className = 'flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-[#315548] shadow-sm transition';
+      tabYearly.className = 'flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-[#819087] hover:text-[#355a4d] transition';
+      monthlyView.classList.remove('hidden');
+      yearlyView.classList.add('hidden');
+      monthNavControls.classList.remove('hidden');
+      pageHeading.innerHTML = 'Your money, <span class="text-[#d78967]">this month.</span>';
+    });
+
+    tabYearly.addEventListener('click', () => {
+      tabYearly.className = 'flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 text-sm font-semibold text-[#315548] shadow-sm transition';
+      tabMonthly.className = 'flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-[#819087] hover:text-[#355a4d] transition';
+      monthlyView.classList.add('hidden');
+      yearlyView.classList.remove('hidden');
+      monthNavControls.classList.add('hidden');
+      pageHeading.innerHTML = 'A year in <span class="text-[#d78967]">perspective.</span>';
+    });
+
+    // CSV Download
+    document.getElementById('downloadCsvBtn').addEventListener('click', () => {
+      const rows = [
+        ['Date', 'Category', 'Tags', 'Note', 'Amount (BDT)'],
+        ...expenses.map(e => [e.date, e.category, (e.tags || []).join(' '), e.note, e.amount])
+      ];
+      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(r => r.map(x => `"${x}"`).join(',')).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `${currentUser ? currentUser.name.toLowerCase().replace(/\s+/g, '_') : 'little_ledger'}_expenses.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // Set today's date
+    document.getElementById('inputDate').value = new Date().toISOString().slice(0, 10);
+
+    // Run Initialization
+    init();
+  </script>
+</body>
+
+</html>

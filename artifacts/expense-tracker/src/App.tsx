@@ -6,8 +6,18 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import {
   ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, CalendarDays, Check,
-  ChevronDown, CircleHelp, Download, Edit3, Plus, Trash2, Wallet, X,
+  ChevronDown, CircleHelp, Download, Edit3, LogOut, Plus, ShieldCheck, Trash2, Wallet, X,
 } from 'lucide-react';
+import {
+  AuthLanding,
+  TwoFactorChallengeModal,
+  SecurityModal,
+  type User,
+  getActiveSession,
+  saveActiveSession,
+  getStoredUsers,
+  saveStoredUsers,
+} from './auth';
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer,
   Tooltip as ChartTooltip, XAxis, YAxis,
@@ -65,8 +75,16 @@ function readStored<T>(key: string, fallback: T): T {
 function normalizeCategoryName(name: string) {
   return categoryAliases[name] ?? name;
 }
-function loadExpenses() {
-  return readStored<Expense[]>(EXPENSES_KEY, []).map((item) => ({
+const DEFAULT_SAMPLE_EXPENSES: Expense[] = [
+  { id: '1', date: '2026-10-01', amount: 350, category: 'Transportation', note: 'Uber to Dhanmondi', tags: ['Uber'] },
+  { id: '2', date: '2026-10-01', amount: 620, category: 'Food', note: 'Lunch at Madchef', tags: ['Madchef', 'Burger'] },
+  { id: '3', date: '2026-10-02', amount: 1200, category: 'Subscriptions', note: 'iCloud + CapCut Pro', tags: ['iCloud', 'CapCut'] },
+  { id: '4', date: '2026-10-03', amount: 2080, category: 'Fitness / Protein', note: 'Optimum Nutrition Protein', tags: ['WheyProtein', 'Gym'] },
+];
+
+function loadExpenses(userId?: string) {
+  const key = userId ? `little-ledger-expenses-usr-${userId}` : EXPENSES_KEY;
+  return readStored<Expense[]>(key, DEFAULT_SAMPLE_EXPENSES).map((item) => ({
     ...item,
     category: normalizeCategoryName(item.category),
     tags: Array.isArray(item.tags) ? item.tags : [],
@@ -108,11 +126,24 @@ function colorForCategory(name: string, categories: Category[]) {
 }
 
 function Home() {
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const session = getActiveSession();
+    return session ? session.user : null;
+  });
+  const [isGuest, setIsGuest] = useState<boolean>(() => {
+    const session = getActiveSession();
+    return session ? session.isGuest : false;
+  });
+  const [pending2faUser, setPending2faUser] = useState<User | null>(null);
+  const [securityModalOpen, setSecurityModalOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
   const today = localDate();
-  const [expenses, setExpenses] = useState<Expense[]>(loadExpenses);
+  const [expenses, setExpenses] = useState<Expense[]>(() => loadExpenses(currentUser?.id));
   const [categories, setCategories] = useState<Category[]>(loadCategories);
   const [monthlyIncome, setMonthlyIncome] = useState(() => {
-    const saved = readStored(INCOME_KEY, DEFAULT_MONTHLY_INCOME);
+    const key = currentUser ? `little-ledger-income-usr-${currentUser.id}` : INCOME_KEY;
+    const saved = readStored(key, DEFAULT_MONTHLY_INCOME);
     return Number.isFinite(saved) && saved >= 0 ? saved : DEFAULT_MONTHLY_INCOME;
   });
   const [activeTab, setActiveTab] = useState<'monthly' | 'yearly'>('monthly');
@@ -131,9 +162,27 @@ function Home() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
 
-  useEffect(() => { localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses)); }, [expenses]);
+  useEffect(() => {
+    if (currentUser) {
+      setExpenses(loadExpenses(currentUser.id));
+      const incKey = `little-ledger-income-usr-${currentUser.id}`;
+      const savedIncome = readStored(incKey, DEFAULT_MONTHLY_INCOME);
+      setMonthlyIncome(Number.isFinite(savedIncome) && savedIncome >= 0 ? savedIncome : DEFAULT_MONTHLY_INCOME);
+    }
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    const key = currentUser ? `little-ledger-expenses-usr-${currentUser.id}` : EXPENSES_KEY;
+    localStorage.setItem(key, JSON.stringify(expenses));
+  }, [expenses, currentUser?.id]);
+
   useEffect(() => { localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories)); }, [categories]);
-  useEffect(() => { localStorage.setItem(INCOME_KEY, JSON.stringify(monthlyIncome)); }, [monthlyIncome]);
+
+  useEffect(() => {
+    const key = currentUser ? `little-ledger-income-usr-${currentUser.id}` : INCOME_KEY;
+    localStorage.setItem(key, JSON.stringify(monthlyIncome));
+  }, [monthlyIncome, currentUser?.id]);
+
   useEffect(() => { setCategoryFilter('all'); setTagFilter('all'); }, [selectedMonth]);
 
   const monthExpenses = useMemo(
@@ -308,6 +357,35 @@ function Home() {
     </div> : null
   );
 
+  if (pending2faUser) {
+    return (
+      <TwoFactorChallengeModal
+        user={pending2faUser}
+        onVerify={() => {
+          saveActiveSession({ user: pending2faUser, isGuest: false });
+          setCurrentUser(pending2faUser);
+          setIsGuest(false);
+          setPending2faUser(null);
+        }}
+        onCancel={() => setPending2faUser(null)}
+      />
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <AuthLanding
+        onLoginSuccess={(user, guest = false) => {
+          setCurrentUser(user);
+          setIsGuest(guest);
+        }}
+        onRequire2FA={(user) => {
+          setPending2faUser(user);
+        }}
+      />
+    );
+  }
+
   return (
     <main className="money-page min-h-[100dvh] px-4 pb-12 pt-5 sm:px-7 lg:px-10">
       <div className="mx-auto max-w-[1180px]">
@@ -319,8 +397,76 @@ function Home() {
               <div className="text-[11px] font-medium tracking-[.12em] text-[#819087]">YOUR MONEY, IN PERSPECTIVE</div>
             </div>
           </div>
-          <div className="hidden items-center gap-2 rounded-full border border-[#dce5dc] bg-[#fbfaf5]/75 px-3 py-2 text-xs font-medium text-[#63796d] sm:flex">
-            <span className="h-2 w-2 rounded-full bg-[#5b9a76]" /> Saved only on this device
+
+          <div className="flex items-center gap-3">
+            {/* 2FA Status Trigger */}
+            <button
+              type="button"
+              onClick={() => setSecurityModalOpen(true)}
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition shadow-sm ${
+                currentUser.twoFactorEnabled
+                  ? 'border-[#c6e4c7] bg-[#eef7ee] text-[#347d68] hover:bg-[#e3f2e2]'
+                  : 'border-[#e5e4d7] bg-[#fdfcf7] text-[#8b8a6a] hover:bg-[#f6f5ea]'
+              }`}
+              title="Click to manage 2FA settings"
+            >
+              <span className={`h-2 w-2 rounded-full ${currentUser.twoFactorEnabled ? 'bg-[#347d68] animate-pulse' : 'bg-[#c7b96b]'}`} />
+              <span>{currentUser.twoFactorEnabled ? '2FA Enabled ✅' : '2FA Inactive ⚠️'}</span>
+            </button>
+
+            {/* User Profile Menu */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((prev) => !prev)}
+                className="flex items-center gap-2.5 rounded-2xl border border-[#dce5dc] bg-white/90 p-1.5 pr-3 hover:bg-white transition shadow-sm"
+              >
+                <div className="grid h-8 w-8 place-items-center rounded-xl bg-[#347d68] text-xs font-bold text-white uppercase">
+                  {isGuest ? 'GU' : currentUser.name.split(' ').map((p) => p[0]).join('').slice(0, 2)}
+                </div>
+                <div className="hidden sm:block text-left">
+                  <div className="text-xs font-bold text-[#24483c] leading-tight">{currentUser.name}</div>
+                  <div className="text-[10px] text-[#7f9086] leading-tight">{isGuest ? 'Guest Mode (Local)' : 'Personal Account'}</div>
+                </div>
+                <ChevronDown size={14} className="text-[#86968c]" />
+              </button>
+
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-[#dce5dc] bg-white p-2 shadow-xl z-40 animate-fade-in">
+                  <div className="px-3 py-2 border-b border-[#edf0e9]">
+                    <div className="text-xs font-bold text-[#24483c]">{currentUser.name}</div>
+                    <div className="text-[11px] text-[#819087] truncate">{currentUser.email}</div>
+                  </div>
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        setSecurityModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#355a4d] hover:bg-[#edf2e9] transition"
+                    >
+                      <ShieldCheck size={16} className="text-[#347d68]" />
+                      <span>Security &amp; 2FA Settings</span>
+                    </button>
+                  </div>
+                  <div className="pt-1 border-t border-[#edf0e9]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        saveActiveSession(null);
+                        setCurrentUser(null);
+                      }}
+                      className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#b8584b] hover:bg-[#fae9e4] transition"
+                    >
+                      <LogOut size={16} />
+                      <span>Log Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -569,6 +715,23 @@ function Home() {
         </>}
         <footer className="flex items-center justify-center gap-2 py-7 text-[11px] text-[#93a097]"><span>Just for you</span><span className="h-1 w-1 rounded-full bg-[#d78967]" /><span>Your numbers never leave this device</span></footer>
       </div>
+
+      {securityModalOpen && (
+        <SecurityModal
+          user={currentUser}
+          onUpdateUser={(updated) => {
+            setCurrentUser(updated);
+            const users = getStoredUsers();
+            const idx = users.findIndex((u) => u.id === updated.id);
+            if (idx !== -1) {
+              users[idx] = updated;
+              saveStoredUsers(users);
+            }
+            saveActiveSession({ user: updated, isGuest });
+          }}
+          onClose={() => setSecurityModalOpen(false)}
+        />
+      )}
     </main>
   );
 }
