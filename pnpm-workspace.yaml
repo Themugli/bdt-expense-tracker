@@ -68,12 +68,6 @@ catalog:
 
 autoInstallPeers: false
 
-onlyBuiltDependencies:
-  - '@swc/core'
-  - esbuild
-  - msw
-  - unrs-resolver
-
 overrides:
   # replit uses linux-x64 only, we can exclude all other platforms
   "esbuild>@esbuild/darwin-arm64": "-"
@@ -162,5 +156,5 @@ overrides:
   js-yaml: '4.3.2'
 
 allowBuilds:
-  '@clerk/shared': set this to true or false
-  esbuild: set this to true or false
+  '@clerk/shared': true
+  esbuild: true
