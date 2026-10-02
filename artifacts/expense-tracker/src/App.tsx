@@ -354,22 +354,6 @@ function Home() {
       </div>)}
     </div> : null
   );
-
-  if (pending2faUser) {
-    return (
-      <TwoFactorChallengeModal
-        user={pending2faUser}
-        onVerify={() => {
-          saveActiveSession({ user: pending2faUser, isGuest: false });
-          setCurrentUser(pending2faUser);
-          setIsGuest(false);
-          setPending2faUser(null);
-        }}
-        onCancel={() => setPending2faUser(null)}
-      />
-    );
-  }
-
   if (!currentUser) {
     return (
       <AuthLanding
