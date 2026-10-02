@@ -127,7 +127,7 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
         {error && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">{error}</div>}
         {message && <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-lg border border-green-200">{message}</div>}
 
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleLogin}>
           <div>
             <label className="block text-sm font-medium text-[#4a6c5c] mb-1.5 uppercase tracking-[.08em] text-[10px]">Email Address</label>
             <input
@@ -152,15 +152,16 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
           </div>
           <div className="flex gap-3 pt-4">
             <button
-              onClick={handleLogin}
-              disabled={loading}
+              type="submit"
+              disabled={loading || !email || !password}
               className="flex-1 bg-[#559778] text-white py-3 rounded-xl font-semibold hover:bg-[#437a60] transition-colors disabled:opacity-50"
             >
               Sign In
             </button>
             <button
+              type="button"
               onClick={handleSignUp}
-              disabled={loading}
+              disabled={loading || !email || !password}
               className="flex-1 bg-white text-[#559778] border border-[#e6ebe3] py-3 rounded-xl font-semibold hover:bg-[#f4f8f5] transition-colors disabled:opacity-50"
             >
               Sign Up
