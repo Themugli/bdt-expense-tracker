@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { supabase } from './lib/supabase';
+import { Auth } from './components/Auth';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -755,12 +757,38 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data }) => {
+          if (data?.currentLevel === 'aal2') {
+            setIsAuthenticated(true);
+          }
+          setIsInitializing(false);
+        });
+      } else {
+        setIsInitializing(false);
+      }
+    });
+  }, []);
+
+  if (isInitializing) {
+    return <div className="min-h-screen flex items-center justify-center bg-[#f4f4ec]">Loading...</div>;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
-        </WouterRouter>
+        {!isAuthenticated ? (
+          <Auth onAuthenticated={() => setIsAuthenticated(true)} />
+        ) : (
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+            <Router />
+          </WouterRouter>
+        )}
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
