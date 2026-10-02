@@ -62,10 +62,9 @@ export function saveActiveSession(session: { user: User; isGuest: boolean } | nu
    ========================================================================= */
 interface AuthLandingProps {
   onLoginSuccess: (user: User, isGuest?: boolean) => void;
-  onRequire2FA: (user: User) => void;
 }
 
-export function AuthLanding({ onLoginSuccess, onRequire2FA }: AuthLandingProps) {
+export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [loginEmail, setLoginEmail] = useState('demo@ledger.bd');
   const [loginPassword, setLoginPassword] = useState('demo123');
@@ -93,12 +92,8 @@ export function AuthLanding({ onLoginSuccess, onRequire2FA }: AuthLandingProps) 
       return;
     }
 
-    if (user.twoFactorEnabled) {
-      onRequire2FA(user);
-    } else {
-      if (rememberMe) saveActiveSession({ user, isGuest: false });
-      onLoginSuccess(user, false);
-    }
+    if (rememberMe) saveActiveSession({ user, isGuest: false });
+    onLoginSuccess(user, false);
   }
 
   function handleSignup(e: FormEvent) {
@@ -129,12 +124,8 @@ export function AuthLanding({ onLoginSuccess, onRequire2FA }: AuthLandingProps) 
   function handleDemoLogin() {
     const users = getStoredUsers();
     let demo = users.find((u) => u.email === 'demo@ledger.bd') || DEFAULT_USERS[0];
-    if (demo.twoFactorEnabled) {
-      onRequire2FA(demo);
-    } else {
-      saveActiveSession({ user: demo, isGuest: false });
-      onLoginSuccess(demo, false);
-    }
+    saveActiveSession({ user: demo, isGuest: false });
+    onLoginSuccess(demo, false);
   }
 
   function handleGuestMode() {
