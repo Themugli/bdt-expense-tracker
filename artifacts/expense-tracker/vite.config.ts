@@ -1,45 +1,42 @@
 import path from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig } from 'vite';
+import { defineConfig, type PluginOption } from 'vite';
 
 const isCI = process.env.CI === 'true';
+const isProd = process.env.NODE_ENV === 'production';
 
 // PORT is optional — default to 5173 for local dev
-const rawPort = process.env.PORT;
-const port = rawPort ? Number(rawPort) : 5173;
+const port = Number(process.env.PORT) || 5173;
 
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
+// For GitHub Pages use the repo subpath; otherwise use BASE_PATH or '/'
+const base = isProd ? '/bdt-expense-tracker/' : (process.env.BASE_PATH || '/');
+
+// Only load Replit-specific plugins when running inside Replit
+async function getReplitPlugins(): Promise<PluginOption[]> {
+  if (isCI || isProd || !process.env.REPL_ID) return [];
+
+  const [errorModal, cartographer, devBanner] = await Promise.all([
+    import('@replit/vite-plugin-runtime-error-modal'),
+    import('@replit/vite-plugin-cartographer'),
+    import('@replit/vite-plugin-dev-banner'),
+  ]);
+
+  return [
+    errorModal.default(),
+    cartographer.cartographer({
+      root: path.resolve(import.meta.dirname, '..'),
+    }),
+    devBanner.devBanner(),
+  ];
 }
 
-// For GitHub Pages, use the repo subpath; otherwise use BASE_PATH or '/'
-const basePath =
-  process.env.NODE_ENV === 'production'
-    ? '/bdt-expense-tracker/'
-    : process.env.BASE_PATH || '/';
-
-export default defineConfig({
-  base: basePath,
+export default defineConfig(async () => ({
+  base,
   plugins: [
     react(),
     tailwindcss(),
-    ...(!isCI && process.env.NODE_ENV !== 'production' &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import('@replit/vite-plugin-runtime-error-modal').then((m) =>
-            m.default(),
-          ),
-          await import('@replit/vite-plugin-cartographer').then((m) =>
-            m.cartographer({
-              root: path.resolve(import.meta.dirname, '..'),
-            }),
-          ),
-          await import('@replit/vite-plugin-dev-banner').then((m) =>
-            m.devBanner(),
-          ),
-        ]
-      : []),
+    ...(await getReplitPlugins()),
   ],
   resolve: {
     alias: {
@@ -72,4 +69,4 @@ export default defineConfig({
     host: '0.0.0.0',
     allowedHosts: true,
   },
-});
+}));
