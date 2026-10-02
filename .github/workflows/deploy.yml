@@ -42,13 +42,16 @@ jobs:
           CI: "true"
           NODE_ENV: production
 
+      - name: Verify build output
+        run: ls -la artifacts/expense-tracker/dist/
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: artifacts/expense-tracker/dist/public
+          path: artifacts/expense-tracker/dist
 
   deploy:
     environment:
