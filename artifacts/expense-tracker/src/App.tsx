@@ -12,8 +12,6 @@ import {
 } from 'lucide-react';
 import {
   AuthLanding,
-  TwoFactorChallengeModal,
-  SecurityModal,
   type User,
   getActiveSession,
   saveActiveSession,
@@ -136,8 +134,6 @@ function Home() {
     const session = getActiveSession();
     return session ? session.isGuest : false;
   });
-  const [pending2faUser, setPending2faUser] = useState<User | null>(null);
-  const [securityModalOpen, setSecurityModalOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const today = localDate();
@@ -381,9 +377,6 @@ function Home() {
           setCurrentUser(user);
           setIsGuest(guest);
         }}
-        onRequire2FA={(user) => {
-          setPending2faUser(user);
-        }}
       />
     );
   }
@@ -391,7 +384,7 @@ function Home() {
   return (
     <main className="money-page min-h-[100dvh] px-4 pb-12 pt-5 sm:px-7 lg:px-10">
       <div className="mx-auto max-w-[1180px]">
-        <header className="rise-in mb-8 flex items-center justify-between gap-4">
+        <header className="relative z-50 rise-in mb-8 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#dce9dc] text-[#347d68]"><Wallet size={21} strokeWidth={1.8} /></div>
             <div>
@@ -401,21 +394,6 @@ function Home() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* 2FA Status Trigger */}
-            <button
-              type="button"
-              onClick={() => setSecurityModalOpen(true)}
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition shadow-sm ${
-                currentUser.twoFactorEnabled
-                  ? 'border-[#c6e4c7] bg-[#eef7ee] text-[#347d68] hover:bg-[#e3f2e2]'
-                  : 'border-[#e5e4d7] bg-[#fdfcf7] text-[#8b8a6a] hover:bg-[#f6f5ea]'
-              }`}
-              title="Click to manage 2FA settings"
-            >
-              <span className={`h-2 w-2 rounded-full ${currentUser.twoFactorEnabled ? 'bg-[#347d68] animate-pulse' : 'bg-[#c7b96b]'}`} />
-              <span>{currentUser.twoFactorEnabled ? '2FA Enabled ✅' : '2FA Inactive ⚠️'}</span>
-            </button>
-
             {/* User Profile Menu */}
             <div className="relative">
               <button
@@ -438,19 +416,6 @@ function Home() {
                   <div className="px-3 py-2 border-b border-[#edf0e9]">
                     <div className="text-xs font-bold text-[#24483c]">{currentUser.name}</div>
                     <div className="text-[11px] text-[#819087] truncate">{currentUser.email}</div>
-                  </div>
-                  <div className="py-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        setSecurityModalOpen(true);
-                      }}
-                      className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#355a4d] hover:bg-[#edf2e9] transition"
-                    >
-                      <ShieldCheck size={16} className="text-[#347d68]" />
-                      <span>Security &amp; 2FA Settings</span>
-                    </button>
                   </div>
                   <div className="pt-1 border-t border-[#edf0e9]">
                     <button
@@ -717,23 +682,6 @@ function Home() {
         </>}
         <footer className="flex items-center justify-center gap-2 py-7 text-[11px] text-[#93a097]"><span>Just for you</span><span className="h-1 w-1 rounded-full bg-[#d78967]" /><span>Your numbers never leave this device</span></footer>
       </div>
-
-      {securityModalOpen && (
-        <SecurityModal
-          user={currentUser}
-          onUpdateUser={(updated) => {
-            setCurrentUser(updated);
-            const users = getStoredUsers();
-            const idx = users.findIndex((u) => u.id === updated.id);
-            if (idx !== -1) {
-              users[idx] = updated;
-              saveStoredUsers(users);
-            }
-            saveActiveSession({ user: updated, isGuest });
-          }}
-          onClose={() => setSecurityModalOpen(false)}
-        />
-      )}
     </main>
   );
 }
