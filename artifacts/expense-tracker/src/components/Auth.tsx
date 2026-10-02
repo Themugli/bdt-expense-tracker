@@ -27,6 +27,39 @@ function EyeOffIcon() {
 
 type AuthMode = 'login' | 'signup' | 'forgot' | 'reset';
 
+// ── Shared password field renderer ────────────────────────────────────
+const PasswordField = ({
+  label, value, onChange, show, onToggle, id, placeholder = '••••••••',
+}: {
+  label: string; value: string; onChange: (v: string) => void;
+  show: boolean; onToggle: () => void; id: string; placeholder?: string;
+}) => (
+  <div>
+    <label htmlFor={id} className="block text-sm font-medium text-[#4a6c5c] mb-1.5 uppercase tracking-[.08em] text-[10px]">
+      {label}
+    </label>
+    <div className="flex items-center border border-[#e6ebe3] rounded-xl bg-[#fafaf8] focus-within:ring-2 focus-within:ring-[#559778]/30 focus-within:border-[#559778] transition-all">
+      <input
+        id={id}
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        required
+        className="flex-1 px-4 py-3 bg-transparent outline-none text-[#294d40]"
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        className="px-3 text-[#87968c] hover:text-[#347d68] transition-colors"
+        aria-label={show ? 'Hide password' : 'Show password'}
+      >
+        {show ? <EyeOffIcon /> : <EyeIcon />}
+      </button>
+    </div>
+  </div>
+);
+
 export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
@@ -182,39 +215,6 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
       </div>
     );
   }
-
-  // ── Shared password field renderer ────────────────────────────────────
-  const PasswordField = ({
-    label, value, onChange, show, onToggle, id, placeholder = '••••••••',
-  }: {
-    label: string; value: string; onChange: (v: string) => void;
-    show: boolean; onToggle: () => void; id: string; placeholder?: string;
-  }) => (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-[#4a6c5c] mb-1.5 uppercase tracking-[.08em] text-[10px]">
-        {label}
-      </label>
-      <div className="flex items-center border border-[#e6ebe3] rounded-xl bg-[#fafaf8] focus-within:ring-2 focus-within:ring-[#559778]/30 focus-within:border-[#559778] transition-all">
-        <input
-          id={id}
-          type={show ? 'text' : 'password'}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          required
-          className="flex-1 px-4 py-3 bg-transparent outline-none text-[#294d40]"
-        />
-        <button
-          type="button"
-          onClick={onToggle}
-          className="px-3 text-[#87968c] hover:text-[#347d68] transition-colors"
-          aria-label={show ? 'Hide password' : 'Show password'}
-        >
-          {show ? <EyeOffIcon /> : <EyeIcon />}
-        </button>
-      </div>
-    </div>
-  );
 
   // ── Reset Password screen (from email link) ────────────────────────────
   if (mode === 'reset') {
