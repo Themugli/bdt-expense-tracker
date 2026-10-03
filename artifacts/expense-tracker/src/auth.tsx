@@ -117,7 +117,7 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
 
   function handleGuestMode() {
     const guestUser: User = {
-      id: 'guest',
+      id: 'guest_v2',
       name: 'Guest User',
       email: 'guest@device.local',
       twoFactorEnabled: false,
