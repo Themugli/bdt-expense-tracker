@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from './lib/supabase';
-import { Auth } from './components/Auth';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -18,6 +17,7 @@ import {
   getStoredUsers,
   saveStoredUsers,
 } from './auth';
+import { useExpenses, newExpenseId } from '@/hooks/use-expenses';
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer,
   Tooltip as ChartTooltip, XAxis, YAxis,
@@ -143,13 +143,24 @@ function Home() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const today = localDate();
-  const [expenses, setExpenses] = useState<Expense[]>(() => loadExpenses(currentUser?.id));
+  const { expenses, addExpense, updateExpense, deleteExpense, recategorize } = useExpenses({ ledgerId: currentUser?.id ?? null, isGuest });
+  
   const [categories, setCategories] = useState<Category[]>(() => loadCategories(currentUser?.id));
   const [monthlyIncome, setMonthlyIncome] = useState(() => {
     const key = currentUser ? `little-ledger-income-usr-${currentUser.id}` : INCOME_KEY;
     const saved = readStored(key, DEFAULT_MONTHLY_INCOME);
     return Number.isFinite(saved) && saved >= 0 ? saved : DEFAULT_MONTHLY_INCOME;
   });
+  
+  const [prevUserId, setPrevUserId] = useState(currentUser?.id);
+  if (currentUser?.id !== prevUserId) {
+    setPrevUserId(currentUser?.id);
+    setCategories(loadCategories(currentUser?.id));
+    const incKey = currentUser ? `little-ledger-income-usr-${currentUser.id}` : INCOME_KEY;
+    const savedIncome = readStored(incKey, DEFAULT_MONTHLY_INCOME);
+    setMonthlyIncome(Number.isFinite(savedIncome) && savedIncome >= 0 ? savedIncome : DEFAULT_MONTHLY_INCOME);
+  }
+
   const [activeTab, setActiveTab] = useState<'monthly' | 'yearly'>('monthly');
   const [selectedMonth, setSelectedMonth] = useState(monthOf(today));
   const [selectedYear, setSelectedYear] = useState(Number(today.slice(0, 4)));
@@ -170,28 +181,26 @@ function Home() {
   const [editingCategoryName, setEditingCategoryName] = useState('');
 
   useEffect(() => {
-    if (currentUser) {
-      setExpenses(loadExpenses(currentUser.id));
-      const incKey = `little-ledger-income-usr-${currentUser.id}`;
-      const savedIncome = readStored(incKey, DEFAULT_MONTHLY_INCOME);
-      setMonthlyIncome(Number.isFinite(savedIncome) && savedIncome >= 0 ? savedIncome : DEFAULT_MONTHLY_INCOME);
-    }
+    // Clear potentially lingering UI state
+    clearForm();
+    setCategoryFilter('all');
+    setTagFilter('all');
+    setEditingCategoryTarget(null);
+    setColorPickerTarget(null);
+    setEditingIncome(false);
   }, [currentUser?.id]);
 
   useEffect(() => {
-    const key = currentUser ? `little-ledger-expenses-usr-${currentUser.id}` : EXPENSES_KEY;
-    localStorage.setItem(key, JSON.stringify(expenses));
-  }, [expenses, currentUser?.id]);
-
-  useEffect(() => {
+    if (currentUser?.id !== prevUserId) return; // Prevent saving old state to new user's key
     const key = currentUser ? `little-ledger-categories-usr-${currentUser.id}` : CATEGORIES_KEY;
     localStorage.setItem(key, JSON.stringify(categories));
-  }, [categories, currentUser?.id]);
+  }, [categories, currentUser?.id, prevUserId]);
 
   useEffect(() => {
+    if (currentUser?.id !== prevUserId) return; // Prevent saving old state to new user's key
     const key = currentUser ? `little-ledger-income-usr-${currentUser.id}` : INCOME_KEY;
     localStorage.setItem(key, JSON.stringify(monthlyIncome));
-  }, [monthlyIncome, currentUser?.id]);
+  }, [monthlyIncome, currentUser?.id, prevUserId]);
 
   useEffect(() => { setCategoryFilter('all'); setTagFilter('all'); }, [selectedMonth]);
 
@@ -302,12 +311,14 @@ function Home() {
       setCategories((current) => [...current, { name: chosenCategory, budget: 0 }]);
     }
     const updated: Expense = {
-      id: editingId ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: editingId ?? newExpenseId(),
       date, amount: parsedAmount, category: chosenCategory, note: note.trim(), tags: parseTags(tagInput),
     };
-    setExpenses((current) => editingId
-      ? current.map((item) => item.id === editingId ? updated : item)
-      : [updated, ...current]);
+    if (editingId) {
+      void updateExpense(updated);
+    } else {
+      void addExpense(updated);
+    }
     if (monthOf(date) !== selectedMonth) setSelectedMonth(monthOf(date));
     setSelectedYear(Number(date.slice(0, 4)));
     clearForm();
@@ -350,7 +361,7 @@ function Home() {
     const existingCategory = categories.find((c) => c.name.toLowerCase() === trimmed.toLowerCase());
     
     if (existingCategory && existingCategory.name !== oldName) {
-      setExpenses((current) => current.map((e) => e.category === oldName ? { ...e, category: existingCategory.name } : e));
+      void recategorize(oldName, existingCategory.name);
       setCategories((current) => {
         const oldBudget = current.find((c) => c.name === oldName)?.budget || 0;
         return current
@@ -361,7 +372,7 @@ function Home() {
       if (categoryFilter === oldName) setCategoryFilter(existingCategory.name);
     } else {
       setCategories((current) => current.map((c) => c.name === oldName ? { ...c, name: trimmed } : c));
-      setExpenses((current) => current.map((e) => e.category === oldName ? { ...e, category: trimmed } : e));
+      void recategorize(oldName, trimmed);
       if (category === oldName) setCategory(trimmed);
       if (categoryFilter === oldName) setCategoryFilter(trimmed);
     }
@@ -372,7 +383,7 @@ function Home() {
   function deleteCategory(name: string) {
     if (!window.confirm(`Are you sure you want to delete the "${name}" category?\nExpenses in this category will be marked as "Uncategorized".`)) return;
     setCategories((current) => current.filter((c) => c.name !== name));
-    setExpenses((current) => current.map((e) => e.category === name ? { ...e, category: 'Uncategorized' } : e));
+    void recategorize(name, 'Uncategorized');
     if (category === name) setCategory('Uncategorized');
     if (categoryFilter === name) setCategoryFilter('all');
   }
@@ -462,6 +473,7 @@ function Home() {
                         setUserMenuOpen(false);
                         saveActiveSession(null);
                         setCurrentUser(null);
+                        if (!isGuest) void supabase.auth.signOut();
                       }}
                       className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#b8584b] hover:bg-[#fae9e4] transition"
                     >
@@ -591,7 +603,33 @@ function Home() {
                 <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={pieData} dataKey="value" nameKey="name" innerRadius={58} outerRadius={82} paddingAngle={3} stroke="none" cornerRadius={4}>{pieData.map((entry) => <Cell key={entry.name} fill={colorForCategory(entry.name, categories)} />)}</Pie><ChartTooltip content={chartTip} /></PieChart></ResponsiveContainer>
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"><strong data-testid="text-category-spend-total" className="font-display text-[19px] font-bold text-[#315548]">{fmtMoney(spent)}</strong><span className="text-[10px] text-[#8a9990]">total spent</span></div>
               </div>
-              <div className="space-y-3">{pieData.map((item) => <div key={item.name} className="flex items-center justify-between gap-2"><div className="flex min-w-0 items-center gap-2"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: colorForCategory(item.name, categories) }} /><span className="truncate text-xs text-[#62796d]">{item.name}</span></div><span data-testid={`text-donut-amount-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="shrink-0 text-xs font-semibold text-[#355a4d]">{fmtMoney(item.value)}</span></div>)}</div>
+              <div className="space-y-3">
+                {pieData.map((item) => (
+                  <div key={item.name} className="flex items-center justify-between gap-2 relative">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <button type="button" onClick={() => setColorPickerTarget(colorPickerTarget === `pie-${item.name}` ? null : `pie-${item.name}`)} aria-label={`Change color for ${item.name}`} className="h-3 w-3 shrink-0 rounded-full shadow-sm hover:scale-110 transition-transform" style={{ backgroundColor: colorForCategory(item.name, categories) }} />
+                      {colorPickerTarget === `pie-${item.name}` && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setColorPickerTarget(null)} />
+                          <div className="absolute top-full left-0 mt-2 z-50 w-48 rounded-xl bg-white p-3 shadow-xl border border-[#dce5dc]">
+                             <div className="flex flex-wrap gap-2 mb-3">
+                               {PREDEFINED_COLORS.map(c => (
+                                 <button type="button" aria-label={`Select color ${c}`} key={c} onClick={() => { changeCategoryColor(item.name, c); setColorPickerTarget(null); }} className="h-6 w-6 rounded-full hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: c }} />
+                               ))}
+                             </div>
+                             <div className="border-t border-[#e6ebe3] pt-3 flex items-center justify-between">
+                               <span className="text-xs font-semibold text-[#789086]">Custom color</span>
+                               <input type="color" value={colorForCategory(item.name, categories)} onChange={(e) => changeCategoryColor(item.name, e.target.value)} className="h-7 w-7 cursor-pointer border-0 p-0 rounded bg-transparent" />
+                             </div>
+                          </div>
+                        </>
+                      )}
+                      <span className="truncate text-xs text-[#62796d]">{item.name}</span>
+                    </div>
+                    <span data-testid={`text-donut-amount-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="shrink-0 text-xs font-semibold text-[#355a4d]">{fmtMoney(item.value)}</span>
+                  </div>
+                ))}
+              </div>
             </div> : <div className="flex min-h-[190px] flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/70 text-center"><div className="mb-3 grid h-11 w-11 place-items-center rounded-full bg-[#e7eee4] text-[#668b75]"><Wallet size={19} /></div><p className="text-sm font-semibold text-[#547165]">Nothing spent just yet</p><p className="mt-1 max-w-[220px] text-xs leading-relaxed text-[#8a9990]">Your categories will take shape here as you add expenses.</p></div>}
           </section>
         </div>
@@ -652,17 +690,20 @@ function Home() {
                       <div className="flex items-center gap-2 relative">
                         <button type="button" onClick={() => setColorPickerTarget(colorPickerTarget === item.name ? null : item.name)} aria-label={`Change color for ${item.name}`} className="h-3 w-3 shrink-0 rounded-full shadow-sm hover:scale-110 transition-transform" style={{ backgroundColor: colorForCategory(item.name, categories) }} />
                         {colorPickerTarget === item.name && (
-                          <div className="absolute top-full left-0 mt-2 z-10 w-48 rounded-xl bg-white p-3 shadow-xl border border-[#dce5dc]">
-                             <div className="flex flex-wrap gap-2 mb-3">
-                               {PREDEFINED_COLORS.map(c => (
-                                 <button type="button" aria-label={`Select color ${c}`} key={c} onClick={() => { changeCategoryColor(item.name, c); setColorPickerTarget(null); }} className="h-6 w-6 rounded-full hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: c }} />
-                               ))}
-                             </div>
-                             <div className="border-t border-[#e6ebe3] pt-3 flex items-center justify-between">
-                               <span className="text-xs font-semibold text-[#789086]">Custom color</span>
-                               <input type="color" value={colorForCategory(item.name, categories)} onChange={(e) => changeCategoryColor(item.name, e.target.value)} className="h-7 w-7 cursor-pointer border-0 p-0 rounded bg-transparent" />
-                             </div>
-                          </div>
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setColorPickerTarget(null)} />
+                            <div className="absolute top-full left-0 mt-2 z-50 w-48 rounded-xl bg-white p-3 shadow-xl border border-[#dce5dc]">
+                               <div className="flex flex-wrap gap-2 mb-3">
+                                 {PREDEFINED_COLORS.map(c => (
+                                   <button type="button" aria-label={`Select color ${c}`} key={c} onClick={() => { changeCategoryColor(item.name, c); setColorPickerTarget(null); }} className="h-6 w-6 rounded-full hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: c }} />
+                                 ))}
+                               </div>
+                               <div className="border-t border-[#e6ebe3] pt-3 flex items-center justify-between">
+                                 <span className="text-xs font-semibold text-[#789086]">Custom color</span>
+                                 <input type="color" value={colorForCategory(item.name, categories)} onChange={(e) => changeCategoryColor(item.name, e.target.value)} className="h-7 w-7 cursor-pointer border-0 p-0 rounded bg-transparent" />
+                               </div>
+                            </div>
+                          </>
                         )}
                         <div className="truncate text-sm font-semibold text-[#416356]">{item.name}</div>
                         <div className="flex gap-1 opacity-60 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
@@ -697,7 +738,7 @@ function Home() {
                 <td data-testid={`text-expense-tags-${item.id}`} className="py-3.5 pr-3"><div className="flex max-w-[170px] flex-wrap gap-1">{item.tags.map((tag) => <span key={tag} className="rounded-md bg-[#edf2e9] px-1.5 py-1 text-[10px] text-[#628675]">#{tag}</span>)}</div></td>
                 <td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td>
                 <td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td>
-                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><button type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></button><button type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => { if (window.confirm('Delete this expense from your ledger?')) setExpenses((current) => current.filter((entry) => entry.id !== item.id)); }} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></button></div></td>
+                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><button type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></button><button type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => { if (window.confirm('Delete this expense from your ledger?')) void deleteExpense(item.id); }} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></button></div></td>
               </tr>)}</tbody>
             </table>
           </div> : <div className="rounded-2xl bg-[#f4f4ec]/65 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165]">No expenses match those filters</p><p className="mt-1 text-xs text-[#8a9990]">Try another category or tag.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
@@ -770,21 +811,26 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data }) => {
-          if (data?.currentLevel === 'aal2') {
-            setIsAuthenticated(true);
-          }
-          setIsInitializing(false);
-        });
+        const user: User = {
+          id: session.user.id,
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+          email: session.user.email || '',
+          twoFactorEnabled: false,
+          twoFactorSecret: '',
+        };
+        saveActiveSession({ user, isGuest: false });
       } else {
-        setIsInitializing(false);
+        const currentSession = getActiveSession();
+        if (currentSession && !currentSession.isGuest) {
+          saveActiveSession(null);
+        }
       }
+      setIsInitializing(false);
     });
   }, []);
 
@@ -795,13 +841,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {!isAuthenticated ? (
-          <Auth onAuthenticated={() => setIsAuthenticated(true)} />
-        ) : (
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <Router />
-          </WouterRouter>
-        )}
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <Router />
+        </WouterRouter>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

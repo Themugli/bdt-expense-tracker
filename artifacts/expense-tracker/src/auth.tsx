@@ -3,6 +3,7 @@ import {
   ArrowRight, Check, Copy, HardDriveDownload, KeyRound, Lock, LockKeyhole,
   LogOut, Mail, PlusCircle, ShieldAlert, ShieldCheck, Sparkles, UserCheck, Wallet, X, Eye, EyeOff
 } from 'lucide-react';
+import { supabase } from './lib/supabase';
 
 export interface User {
   id: string;
@@ -70,49 +71,61 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
 
   const [errorMsg, setErrorMsg] = useState('');
 
-  function handleLogin(e: FormEvent) {
+  async function handleLogin(e: FormEvent) {
     e.preventDefault();
     setErrorMsg('');
-    const users = getStoredUsers();
-    const user = users.find(
-      (u) =>
-        (u.email.toLowerCase() === loginEmail.trim().toLowerCase() ||
-          u.name.toLowerCase() === loginEmail.trim().toLowerCase()) &&
-        u.password === loginPassword,
-    );
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: loginEmail.trim(),
+      password: loginPassword,
+    });
 
-    if (!user) {
-      setErrorMsg('Invalid email or password. Please check your credentials.');
+    if (error) {
+      setErrorMsg(error.message);
       return;
     }
 
-    if (rememberMe) saveActiveSession({ user, isGuest: false });
-    onLoginSuccess(user, false);
+    if (data.user) {
+      const user: User = {
+        id: data.user.id,
+        name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+        email: data.user.email || loginEmail.trim(),
+        twoFactorEnabled: false,
+        twoFactorSecret: '',
+      };
+      if (rememberMe) saveActiveSession({ user, isGuest: false });
+      onLoginSuccess(user, false);
+    }
   }
 
-  function handleSignup(e: FormEvent) {
+  async function handleSignup(e: FormEvent) {
     e.preventDefault();
     setErrorMsg('');
-    const users = getStoredUsers();
-    if (users.some((u) => u.email.toLowerCase() === signupEmail.trim().toLowerCase())) {
-      setErrorMsg('An account with this email already exists. Please log in.');
+    
+    const { data, error } = await supabase.auth.signUp({
+      email: signupEmail.trim(),
+      password: signupPassword,
+      options: {
+        data: { name: signupName.trim() }
+      }
+    });
+
+    if (error) {
+      setErrorMsg(error.message);
       return;
     }
 
-    const randomDigits = Math.floor(1000 + Math.random() * 9000);
-    const newUser: User = {
-      id: `usr_${Date.now()}`,
-      name: signupName.trim(),
-      email: signupEmail.trim(),
-      password: signupPassword,
-      twoFactorEnabled: false,
-      twoFactorSecret: `BD-EXPENSE-2FA-${randomDigits}`,
-    };
-
-    const nextUsers = [...users, newUser];
-    saveStoredUsers(nextUsers);
-    if (rememberMe) saveActiveSession({ user: newUser, isGuest: false });
-    onLoginSuccess(newUser, false);
+    if (data.user) {
+      const user: User = {
+        id: data.user.id,
+        name: signupName.trim(),
+        email: data.user.email || signupEmail.trim(),
+        twoFactorEnabled: false,
+        twoFactorSecret: '',
+      };
+      if (rememberMe) saveActiveSession({ user, isGuest: false });
+      onLoginSuccess(user, false);
+    }
   }
 
   function handleGuestMode() {
