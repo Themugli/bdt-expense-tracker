@@ -248,6 +248,20 @@ function Home() {
 
   useEffect(() => { setCategoryFilter('all'); setTagFilter('all'); }, [selectedMonth]);
 
+  useEffect(() => {
+    if (editingId) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') clearForm();
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [editingId]);
+
   const monthExpenses = useMemo(
     () => expenses.filter((entry) => monthOf(entry.date) === selectedMonth).sort((a, b) => b.date.localeCompare(a.date)),
     [expenses, selectedMonth],
@@ -376,7 +390,6 @@ function Home() {
     setCustomCategoryMode(false);
     setTagInput(expense.tags.map((tag) => `#${tag}`).join(', '));
     setNote(expense.note);
-    document.getElementById('expense-entry')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   function saveIncome(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -617,28 +630,50 @@ function Home() {
         </section>
 
         <div className="mb-5 grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
-          <section id="expense-entry" className="glass-card rounded-[24px] p-5 sm:p-6">
-            <div className="mb-5 flex items-start justify-between">
-              <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">{editingId ? 'Make a change' : 'A small note to self'}</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">{editingId ? 'Edit expense' : 'What did you spend?'}</h2></div>
-              {editingId && <button type="button" aria-label="Cancel edit" data-testid="button-cancel-edit" onClick={clearForm} className="grid h-8 w-8 place-items-center rounded-full text-[#768980] hover:bg-[#edf1e8]"><X size={17} /></button>}
-            </div>
-            <form onSubmit={submitExpense} className="space-y-3">
-              <div className="grid grid-cols-[1fr_1.05fr] gap-3">
-                <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Amount</span><div className="flex h-11 items-center rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 focus-within:border-[#84a998]"><span className="mr-2 text-sm font-semibold text-[#779284]">৳</span><input aria-label="Amount in BDT" data-testid="input-expense-amount" type="number" min="0.01" step="0.01" required value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0.00" className="w-full bg-transparent text-sm font-semibold text-[#315548] outline-none placeholder:font-normal placeholder:text-[#b7c0b9]" /></div></label>
-                <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Date</span><input aria-label="Expense date" data-testid="input-expense-date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]" /></label>
-              </div>
-              {!customCategoryMode ? <div>
-                <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Where it belongs</span><span className="relative block"><select aria-label="Expense category" data-testid="select-expense-category" value={category} onChange={(event) => setCategory(event.target.value)} required className="h-11 w-full appearance-none rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 pr-9 text-sm text-[#4d6c5e]">{categories.length === 0 ? <option value="" disabled>No categories available</option> : categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select><ChevronDown size={15} className="pointer-events-none absolute right-3 top-3.5 text-[#82958a]" /></span></label>
-                <button type="button" data-testid="button-add-custom-category" onClick={() => { setCustomName(''); setCustomCategoryMode(true); }} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-[#347d68] hover:bg-[#edf2e9]"><Plus size={14} />Add a custom category</button>
-              </div> : <div className="rounded-xl border border-[#dce5dc] bg-[#fffdf8]/50 p-3">
-                <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">New “Where it belongs” category</span><input aria-label="Custom category name" data-testid="input-custom-category" maxLength={40} required autoFocus value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="For example, Books or Gifts" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
-                <div className="mt-2 flex items-center justify-between gap-2"><p className="text-[10px] text-[#87968c]">Saved when you add this expense.</p><button type="button" data-testid="button-use-existing-category" onClick={() => { setCustomCategoryMode(false); setCustomName(''); }} className="rounded-lg px-2 py-1 text-[11px] font-semibold text-[#628675] hover:bg-[#edf2e9]">Choose existing</button></div>
-              </div>}
-              <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Tags <span className="font-normal">(optional, separate with commas or spaces)</span></span><input aria-label="Custom expense tags" data-testid="input-expense-tags" maxLength={240} value={tagInput} onChange={(event) => setTagInput(event.target.value)} placeholder="#iCloud, #CapCut, #Uber" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
-              <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">A note <span className="font-normal">(optional)</span></span><input aria-label="Optional note" data-testid="input-expense-note" maxLength={80} value={note} onChange={(event) => setNote(event.target.value)} placeholder="A quick detail to remember" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
-              <button type="submit" data-testid="button-save-expense" className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-semibold text-white shadow-sm hover:bg-[#2d705d]">{editingId ? <Check size={16} /> : <Plus size={17} />}{editingId ? 'Save changes' : 'Add to my ledger'}</button>
-            </form>
-          </section>
+          {(() => {
+            const formContent = (
+              <form onSubmit={submitExpense} className="space-y-3">
+                <div className="grid grid-cols-[1fr_1.05fr] gap-3">
+                  <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Amount</span><div className="flex h-11 items-center rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 focus-within:border-[#84a998]"><span className="mr-2 text-sm font-semibold text-[#779284]">৳</span><input aria-label="Amount in BDT" data-testid="input-expense-amount" type="number" min="0.01" step="0.01" required value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0.00" className="w-full bg-transparent text-sm font-semibold text-[#315548] outline-none placeholder:font-normal placeholder:text-[#b7c0b9]" /></div></label>
+                  <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Date</span><input aria-label="Expense date" data-testid="input-expense-date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]" /></label>
+                </div>
+                {!customCategoryMode ? <div>
+                  <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Where it belongs</span><span className="relative block"><select aria-label="Expense category" data-testid="select-expense-category" value={category} onChange={(event) => setCategory(event.target.value)} required className="h-11 w-full appearance-none rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 pr-9 text-sm text-[#4d6c5e]">{categories.length === 0 ? <option value="" disabled>No categories available</option> : categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select><ChevronDown size={15} className="pointer-events-none absolute right-3 top-3.5 text-[#82958a]" /></span></label>
+                  <button type="button" data-testid="button-add-custom-category" onClick={() => { setCustomName(''); setCustomCategoryMode(true); }} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-[#347d68] hover:bg-[#edf2e9]"><Plus size={14} />Add a custom category</button>
+                </div> : <div className="rounded-xl border border-[#dce5dc] bg-[#fffdf8]/50 p-3">
+                  <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">New “Where it belongs” category</span><input aria-label="Custom category name" data-testid="input-custom-category" maxLength={40} required autoFocus value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="For example, Books or Gifts" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
+                  <div className="mt-2 flex items-center justify-between gap-2"><p className="text-[10px] text-[#87968c]">Saved when you add this expense.</p><button type="button" data-testid="button-use-existing-category" onClick={() => { setCustomCategoryMode(false); setCustomName(''); }} className="rounded-lg px-2 py-1 text-[11px] font-semibold text-[#628675] hover:bg-[#edf2e9]">Choose existing</button></div>
+                </div>}
+                <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Tags <span className="font-normal">(optional, separate with commas or spaces)</span></span><input aria-label="Custom expense tags" data-testid="input-expense-tags" maxLength={240} value={tagInput} onChange={(event) => setTagInput(event.target.value)} placeholder="#iCloud, #CapCut, #Uber" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
+                <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">A note <span className="font-normal">(optional)</span></span><input aria-label="Optional note" data-testid="input-expense-note" maxLength={80} value={note} onChange={(event) => setNote(event.target.value)} placeholder="A quick detail to remember" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
+                <button type="submit" data-testid="button-save-expense" className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-semibold text-white shadow-sm hover:bg-[#2d705d]">{editingId ? <Check size={16} /> : <Plus size={17} />}{editingId ? 'Save changes' : 'Add to my ledger'}</button>
+              </form>
+            );
+
+            if (editingId) {
+              return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                  <div className="absolute inset-0" onClick={clearForm}></div>
+                  <div className="relative glass-card max-w-lg w-full rounded-[28px] border border-white/80 p-6 sm:p-8 bg-white/95 max-h-[90vh] overflow-y-auto z-10 shadow-2xl">
+                    <div className="mb-5 flex items-start justify-between">
+                      <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Make a change</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Edit expense</h2></div>
+                      <button type="button" aria-label="Cancel edit" data-testid="button-cancel-edit" onClick={clearForm} className="grid h-8 w-8 place-items-center rounded-full text-[#768980] hover:bg-[#edf1e8]"><X size={17} /></button>
+                    </div>
+                    {formContent}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <section id="expense-entry" className="glass-card rounded-[24px] p-5 sm:p-6">
+                <div className="mb-5 flex items-start justify-between">
+                  <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">A small note to self</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">What did you spend?</h2></div>
+                </div>
+                {formContent}
+              </section>
+            );
+          })()}
 
           <section className="glass-card rounded-[24px] p-5 sm:p-6">
             <div className="mb-4 flex items-end justify-between"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The shape of your spending</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Where it went</h2></div><span className="text-xs text-[#8a9990]">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'}</span></div>
