@@ -159,6 +159,8 @@ function Home() {
   const [incomeDraft, setIncomeDraft] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
+  const [editingCategoryTarget, setEditingCategoryTarget] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState('');
 
   useEffect(() => {
     if (currentUser) {
@@ -321,6 +323,31 @@ function Home() {
   function changeBudget(name: string, raw: string) {
     const next = Math.max(0, Number(raw) || 0);
     setCategories((current) => current.map((item) => item.name === name ? { ...item, budget: next } : item));
+  }
+
+  function renameCategory(oldName: string, newName: string) {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === oldName) {
+      setEditingCategoryTarget(null);
+      return;
+    }
+    if (categories.some((c) => c.name.toLowerCase() === trimmed.toLowerCase())) {
+      alert("A category with this name already exists!");
+      return;
+    }
+    setCategories((current) => current.map((c) => c.name === oldName ? { ...c, name: trimmed } : c));
+    setExpenses((current) => current.map((e) => e.category === oldName ? { ...e, category: trimmed } : e));
+    setEditingCategoryTarget(null);
+    if (category === oldName) setCategory(trimmed);
+    if (categoryFilter === oldName) setCategoryFilter(trimmed);
+  }
+
+  function deleteCategory(name: string) {
+    if (!window.confirm(`Are you sure you want to delete the "${name}" category?\nExpenses in this category will be marked as "Uncategorized".`)) return;
+    setCategories((current) => current.filter((c) => c.name !== name));
+    setExpenses((current) => current.map((e) => e.category === name ? { ...e, category: 'Uncategorized' } : e));
+    if (category === name) setCategory('Uncategorized');
+    if (categoryFilter === name) setCategoryFilter('all');
   }
   function shiftMonth(amountBy: number) {
     const [year, month] = selectedMonth.split('-').map(Number);
@@ -591,7 +618,30 @@ function Home() {
               const ratio = item.budget > 0 ? item.spent / item.budget : item.spent > 0 ? 1 : 0;
               const barColor = ratio >= 1 ? '#c66655' : ratio >= .75 ? '#d4aa46' : '#62a07b';
               return <div key={item.name} className="rounded-2xl border border-[#e4e9e1] bg-[#fffdf8]/45 p-4" data-testid={`budget-row-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
-                <div className="mb-3 flex items-start justify-between gap-2"><div className="min-w-0"><div className="truncate text-sm font-semibold text-[#416356]">{item.name}</div><div className="mt-1 text-[11px] text-[#87968c]">{item.budget === 0 && item.spent === 0 ? 'No budget set' : item.budget === 0 ? `${fmtMoney(item.spent)} spent · no budget` : `${fmtMoney(item.spent)} spent`}</div></div>
+                <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    {editingCategoryTarget === item.name ? (
+                      <div className="flex items-center gap-2 mb-1">
+                        <input
+                          autoFocus
+                          value={editingCategoryName}
+                          onChange={(e) => setEditingCategoryName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') renameCategory(item.name, editingCategoryName); if (e.key === 'Escape') setEditingCategoryTarget(null); }}
+                          onBlur={() => renameCategory(item.name, editingCategoryName)}
+                          className="h-7 w-full rounded-md border border-[#c6e4c7] px-2 text-sm text-[#416356] font-semibold bg-white outline-none focus:ring-2 focus:ring-[#347d68]"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 group">
+                        <div className="truncate text-sm font-semibold text-[#416356]">{item.name}</div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button type="button" onClick={() => { setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); }} className="grid h-6 w-6 place-items-center rounded bg-[#edf2e9] text-[#789086] hover:text-[#347d68] hover:bg-[#e2eadc]"><Edit3 size={12} /></button>
+                          <button type="button" onClick={() => deleteCategory(item.name)} className="grid h-6 w-6 place-items-center rounded bg-[#fae9e4] text-[#a88e87] hover:text-[#ba5b4d] hover:bg-[#f3d9d3]"><Trash2 size={12} /></button>
+                        </div>
+                      </div>
+                    )}
+                    <div className="mt-1 text-[11px] text-[#87968c]">{item.budget === 0 && item.spent === 0 ? 'No budget set' : item.budget === 0 ? `${fmtMoney(item.spent)} spent · no budget` : `${fmtMoney(item.spent)} spent`}</div>
+                  </div>
                   <label className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#f0f2eb] px-2 py-1.5 text-[11px] text-[#87968c]"><span>Budget</span><span className="font-semibold text-[#547165]">৳</span><input aria-label={`${item.name} monthly budget in BDT`} data-testid={`input-budget-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} type="number" min="0" step="50" value={item.budget} onChange={(event) => changeBudget(item.name, event.target.value)} className="w-[66px] bg-transparent text-right text-xs font-semibold text-[#416356] outline-none" /></label>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[#e8ece4]"><div data-testid={`progress-budget-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="h-full rounded-full transition-[width] duration-500" style={{ width: `${item.budget > 0 ? Math.min(100, ratio * 100) : item.spent > 0 ? 100 : 0}%`, backgroundColor: barColor }} /></div>
