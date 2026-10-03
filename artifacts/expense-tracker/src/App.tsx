@@ -224,6 +224,9 @@ function Home() {
   const [editingCategoryTarget, setEditingCategoryTarget] = useState<string | null>(null);
   const [colorPickerTarget, setColorPickerTarget] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
+  const [editingCategoryColor, setEditingCategoryColor] = useState('#62a07b');
+  const [editingCategoryBudget, setEditingCategoryBudget] = useState('0');
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     // Clear potentially lingering UI state
@@ -250,12 +253,14 @@ function Home() {
   useEffect(() => { setCategoryFilter('all'); setTagFilter('all'); }, [selectedMonth]);
 
   useEffect(() => {
-    if (editingId || expenseToDelete) {
+    if (editingId || expenseToDelete || editingCategoryTarget || categoryToDelete) {
       document.body.style.overflow = 'hidden';
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
           if (editingId) clearForm();
           if (expenseToDelete) setExpenseToDelete(null);
+          if (editingCategoryTarget) setEditingCategoryTarget(null);
+          if (categoryToDelete) setCategoryToDelete(null);
         }
       };
       window.addEventListener('keydown', handleKeyDown);
@@ -264,7 +269,7 @@ function Home() {
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [editingId, expenseToDelete]);
+  }, [editingId, expenseToDelete, editingCategoryTarget, categoryToDelete]);
 
   const monthExpenses = useMemo(
     () => expenses.filter((entry) => monthOf(entry.date) === selectedMonth).sort((a, b) => b.date.localeCompare(a.date)),
@@ -441,8 +446,16 @@ function Home() {
     setEditingCategoryTarget(null);
   }
 
+  function saveCategoryEdit() {
+    if (!editingCategoryTarget) return;
+    const target = editingCategoryTarget;
+    changeCategoryColor(target, editingCategoryColor);
+    changeBudget(target, editingCategoryBudget);
+    renameCategory(target, editingCategoryName);
+    setEditingCategoryTarget(null);
+  }
+
   function deleteCategory(name: string) {
-    if (!window.confirm(`Are you sure you want to delete the "${name}" category?\nExpenses in this category will be marked as "Uncategorized".`)) return;
     setCategories((current) => current.filter((c) => c.name !== name));
     void recategorize(name, 'Uncategorized');
     if (category === name) setCategory('Uncategorized');
@@ -758,43 +771,14 @@ function Home() {
               return <div key={item.name} className="group rounded-2xl border border-[#e4e9e1] bg-[#fffdf8]/45 p-4" data-testid={`budget-row-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
                 <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    {editingCategoryTarget === item.name ? (
-                      <div className="flex items-center gap-2 mb-1">
-                        <input
-                          autoFocus
-                          value={editingCategoryName}
-                          onChange={(e) => setEditingCategoryName(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') renameCategory(item.name, editingCategoryName); if (e.key === 'Escape') setEditingCategoryTarget(null); }}
-                          onBlur={() => renameCategory(item.name, editingCategoryName)}
-                          className="h-7 w-full rounded-md border border-[#c6e4c7] px-2 text-sm text-[#416356] font-semibold bg-white outline-none focus:ring-2 focus:ring-[#347d68]"
-                        />
+                    <div className="flex items-center gap-2 relative">
+                      <span className="h-3 w-3 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: colorForCategory(item.name, categories) }} />
+                      <div className="truncate text-sm font-semibold text-[#416356]">{item.name}</div>
+                      <div className="flex gap-1 opacity-60 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <button type="button" aria-label={`Edit ${item.name}`} onClick={() => { setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); setEditingCategoryColor(colorForCategory(item.name, categories)); setEditingCategoryBudget(item.budget.toString()); }} className="grid h-6 w-6 place-items-center rounded bg-[#edf2e9] text-[#789086] hover:text-[#347d68] hover:bg-[#e2eadc]"><Edit3 size={12} /></button>
+                        <button type="button" aria-label={`Delete ${item.name}`} onClick={() => setCategoryToDelete(item.name)} className="grid h-6 w-6 place-items-center rounded bg-[#fae9e4] text-[#a88e87] hover:text-[#ba5b4d] hover:bg-[#f3d9d3]"><Trash2 size={12} /></button>
                       </div>
-                    ) : (
-                      <div className="flex items-center gap-2 relative">
-                        <button type="button" onClick={() => setColorPickerTarget(colorPickerTarget === item.name ? null : item.name)} aria-label={`Change color for ${item.name}`} className="h-3 w-3 shrink-0 rounded-full shadow-sm hover:scale-110 transition-transform" style={{ backgroundColor: colorForCategory(item.name, categories) }} />
-                        {colorPickerTarget === item.name && (
-                          <>
-                            <div className="fixed inset-0 z-40" onClick={() => setColorPickerTarget(null)} />
-                            <div className="absolute top-full left-0 mt-2 z-50 w-48 rounded-xl bg-white p-3 shadow-xl border border-[#dce5dc]">
-                               <div className="flex flex-wrap gap-2 mb-3">
-                                 {PREDEFINED_COLORS.map(c => (
-                                   <button type="button" aria-label={`Select color ${c}`} key={c} onClick={() => { changeCategoryColor(item.name, c); setColorPickerTarget(null); }} className="h-6 w-6 rounded-full hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: c }} />
-                                 ))}
-                               </div>
-                               <div className="border-t border-[#e6ebe3] pt-3 flex items-center justify-between">
-                                 <span className="text-xs font-semibold text-[#789086]">Custom color</span>
-                                 <input type="color" value={colorForCategory(item.name, categories)} onChange={(e) => changeCategoryColor(item.name, e.target.value)} className="h-7 w-7 cursor-pointer border-0 p-0 rounded bg-transparent" />
-                               </div>
-                            </div>
-                          </>
-                        )}
-                        <div className="truncate text-sm font-semibold text-[#416356]">{item.name}</div>
-                        <div className="flex gap-1 opacity-60 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          <button type="button" onClick={() => { setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); setColorPickerTarget(null); }} className="grid h-6 w-6 place-items-center rounded bg-[#edf2e9] text-[#789086] hover:text-[#347d68] hover:bg-[#e2eadc]"><Edit3 size={12} /></button>
-                          <button type="button" onClick={() => { deleteCategory(item.name); setColorPickerTarget(null); }} className="grid h-6 w-6 place-items-center rounded bg-[#fae9e4] text-[#a88e87] hover:text-[#ba5b4d] hover:bg-[#f3d9d3]"><Trash2 size={12} /></button>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                     <div className="mt-1 text-[11px] text-[#87968c]">{item.budget === 0 && item.spent === 0 ? 'No budget set' : item.budget === 0 ? `${fmtMoney(item.spent)} spent · no budget` : `${fmtMoney(item.spent)} spent`}</div>
                   </div>
                   <label className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#f0f2eb] px-2 py-1.5 text-[11px] text-[#87968c]"><span>Budget</span><span className="font-semibold text-[#547165]">৳</span><input aria-label={`${item.name} monthly budget in BDT`} data-testid={`input-budget-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} type="number" min="0" step="50" value={item.budget.toString()} onChange={(event) => changeBudget(item.name, event.target.value)} onKeyDown={(e) => { if (['-', '+', 'e', 'E', '.'].includes(e.key)) e.preventDefault(); }} onBlur={(e) => { e.target.value = item.budget.toString(); }} className="w-[80px] bg-transparent text-right text-xs font-semibold text-[#416356] outline-none" /></label>
@@ -872,6 +856,53 @@ function Home() {
         <footer className="flex items-center justify-center gap-2 py-7 text-[11px] text-[#93a097]"><span>Just for you</span><span className="h-1 w-1 rounded-full bg-[#d78967]" /><span>Your numbers never leave this device</span></footer>
       </div>
       
+      {editingCategoryTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="absolute inset-0" onClick={() => setEditingCategoryTarget(null)}></div>
+          <form onSubmit={(e) => { e.preventDefault(); saveCategoryEdit(); }} className="relative glass-card max-w-md w-full rounded-[28px] border border-white/80 p-6 sm:p-8 bg-white/95 max-h-[90vh] overflow-y-auto z-10 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="font-display text-xl font-bold text-[#294d40]">Edit category</h3>
+              <button type="button" aria-label="Close" onClick={() => setEditingCategoryTarget(null)} className="grid h-8 w-8 place-items-center rounded-full bg-[#f4f5ef] text-[#627a6d] hover:bg-[#e8ebe3]"><X size={16} /></button>
+            </div>
+            <label className="mb-4 block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Name</span>
+              <input autoFocus aria-label="Category name" value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3 text-sm text-[#416356] outline-none focus:ring-2 focus:ring-[#347d68]" />
+            </label>
+            <label className="mb-4 block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Monthly budget (৳)</span>
+              <input aria-label="Category budget" type="number" min="0" step="50" value={editingCategoryBudget} onChange={(e) => setEditingCategoryBudget(e.target.value)} onKeyDown={(e) => { if (['-', '+', 'e', 'E', '.'].includes(e.key)) e.preventDefault(); }} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3 text-sm text-[#416356] outline-none focus:ring-2 focus:ring-[#347d68]" />
+            </label>
+            <div className="mb-6"><span className="mb-2 block text-[11px] font-semibold text-[#819087]">Color</span>
+              <div className="flex flex-wrap items-center gap-2">
+                {PREDEFINED_COLORS.map((c) => (
+                  <button type="button" aria-label={`Select color ${c}`} key={c} onClick={() => setEditingCategoryColor(c)} className={`h-7 w-7 rounded-full shadow-sm transition-transform hover:scale-110 ${editingCategoryColor.toLowerCase() === c.toLowerCase() ? 'ring-2 ring-offset-2 ring-[#347d68]' : ''}`} style={{ backgroundColor: c }} />
+                ))}
+                <input type="color" aria-label="Custom color" value={editingCategoryColor} onChange={(e) => setEditingCategoryColor(e.target.value)} className="h-7 w-7 cursor-pointer border-0 p-0 rounded bg-transparent" />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setEditingCategoryTarget(null)} className="flex-1 rounded-xl bg-[#f4f5ef] py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</button>
+              <button type="submit" className="flex-1 rounded-xl bg-[#347d68] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#2b6857] transition">Save changes</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {categoryToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="absolute inset-0" onClick={() => setCategoryToDelete(null)}></div>
+          <div className="relative glass-card max-w-sm w-full rounded-[24px] border border-white/80 p-6 text-center bg-white/95 z-10 shadow-2xl">
+            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[#fae9e4] text-[#b8584b]">
+              <Trash2 size={24} />
+            </div>
+            <h3 className="font-display text-lg font-bold text-[#294d40] mb-2">Delete Category?</h3>
+            <p className="text-sm text-[#627a6d] mb-6">Are you sure you want to delete the "{categoryToDelete}" category? Expenses in this category will be marked as "Uncategorized".</p>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setCategoryToDelete(null)} className="flex-1 rounded-xl bg-[#f4f5ef] py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</button>
+              <button type="button" onClick={() => { deleteCategory(categoryToDelete); setCategoryToDelete(null); }} className="flex-1 rounded-xl bg-[#b8584b] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a04b40] transition">Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {expenseToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="absolute inset-0" onClick={() => setExpenseToDelete(null)}></div>
