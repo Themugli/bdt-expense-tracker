@@ -12,7 +12,7 @@ import {
   ChevronDown, CircleHelp, Download, Edit3, LogOut, Plus, ShieldCheck, Trash2, Wallet, X,
 } from 'lucide-react';
 import {
-  AuthLanding,
+  AuthModal,
   type User,
   getActiveSession,
   saveActiveSession,
@@ -134,10 +134,20 @@ function colorForCategory(name: string, categories: Category[]) {
 }
 
 function Home() {
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const session = getActiveSession();
     return session ? session.user : null;
   });
+  const requireAuth = (e?: React.SyntheticEvent, action?: () => void) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (!currentUser) {
+      setShowAuthModal(true);
+      return false;
+    }
+    if (action) action();
+    return true;
+  };
   const [isGuest, setIsGuest] = useState<boolean>(() => {
     const session = getActiveSession();
     return session ? session.isGuest : false;
@@ -145,6 +155,24 @@ function Home() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const today = localDate();
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    let handleScroll: () => void;
+    if (!currentUser && !showAuthModal) {
+      timer = setTimeout(() => setShowAuthModal(true), 15000);
+      handleScroll = () => {
+        if (window.scrollY > 50) {
+          setShowAuthModal(true);
+        }
+      };
+      window.addEventListener('scroll', handleScroll, { passive: true });
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+      if (handleScroll) window.removeEventListener('scroll', handleScroll);
+    };
+  }, [currentUser, showAuthModal]);
   const { expenses, addExpense, updateExpense, deleteExpense, recategorize } = useExpenses({ ledgerId: currentUser?.id ?? null, isGuest });
   
   const [categories, setCategories] = useState<Category[]>(() => loadCategories(currentUser?.id));
@@ -508,16 +536,7 @@ function Home() {
       </div>)}
     </div> : null
   );
-  if (!currentUser) {
-    return (
-      <AuthLanding
-        onLoginSuccess={(user, guest = false) => {
-          setCurrentUser(user);
-          setIsGuest(guest);
-        }}
-      />
-    );
-  }
+
 
   return (
     <main className="money-page min-h-[100dvh] px-4 pb-12 pt-5 sm:px-7 lg:px-10">
@@ -540,10 +559,10 @@ function Home() {
                 className="flex items-center gap-2.5 rounded-2xl border border-[#dce5dc] bg-white/90 p-1.5 pr-3 hover:bg-white transition shadow-sm"
               >
                 <div className="grid h-8 w-8 place-items-center rounded-xl bg-[#347d68] text-xs font-bold text-white uppercase">
-                  {isGuest ? 'GU' : currentUser.name.split(' ').map((p) => p[0]).join('').slice(0, 2)}
+                  {isGuest ? 'GU' : currentUser?.name?.split(' ').map((p) => p[0]).join('').slice(0, 2) || 'G'}
                 </div>
                 <div className="hidden sm:block text-left">
-                  <div className="text-xs font-bold text-[#24483c] leading-tight">{currentUser.name}</div>
+                  <div className="text-xs font-bold text-[#24483c] leading-tight">{currentUser?.name || 'Guest'}</div>
                   <div className="text-[10px] text-[#7f9086] leading-tight">{isGuest ? 'Guest Mode (Local)' : 'Personal Account'}</div>
                 </div>
                 <ChevronDown size={14} className="text-[#86968c]" />
@@ -552,8 +571,8 @@ function Home() {
               {userMenuOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-[#dce5dc] bg-white p-2 shadow-xl z-40 animate-fade-in">
                   <div className="px-3 py-2 border-b border-[#edf0e9]">
-                    <div className="text-xs font-bold text-[#24483c]">{currentUser.name}</div>
-                    <div className="text-[11px] text-[#819087] truncate">{currentUser.email}</div>
+                    <div className="text-xs font-bold text-[#24483c]">{currentUser?.name || 'Guest'}</div>
+                    <div className="text-[11px] text-[#819087] truncate">{currentUser?.email || ''}</div>
                   </div>
                   <div className="pt-1 border-t border-[#edf0e9]">
                     <motion.button {...bounce}
@@ -664,7 +683,7 @@ function Home() {
         <div className="mb-5 grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
           {(() => {
             const formContent = (
-              <form onSubmit={submitExpense} noValidate className="space-y-3">
+              <form onSubmit={(e) => requireAuth(e, () => submitExpense(e))} noValidate className="space-y-3">
                 <div className="grid grid-cols-[1fr_1.05fr] gap-3">
                   <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Amount</span><div className={`flex h-11 items-center rounded-xl border ${amountError ? 'border-[#b8584b]' : 'border-[#dce5dc] focus-within:border-[#84a998]'} bg-[#fffdf8]/75 px-3`}><span className={`mr-2 text-sm font-semibold ${amountError ? 'text-[#b8584b]' : 'text-[#779284]'}`}>৳</span><input aria-label="Amount in BDT" data-testid="input-expense-amount" type="number" min="0.01" step="0.01" value={amount} onChange={(event) => { setAmount(event.target.value); if (amountError) setAmountError(false); }} placeholder="0.00" className={`w-full bg-transparent text-sm font-semibold ${amountError ? 'text-[#b8584b]' : 'text-[#315548]'} outline-none placeholder:font-normal placeholder:text-[#b7c0b9]`} /></div>
                   {amountError && <span className="mt-1 block text-[10px] font-semibold text-[#b8584b]">Please enter a valid amount</span>}
@@ -795,8 +814,8 @@ function Home() {
                       <span className="h-3 w-3 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: colorForCategory(item.name, categories) }} />
                       <div className="truncate text-sm font-semibold text-[#416356]">{item.name}</div>
                       <div className="flex gap-1 opacity-60 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <motion.button {...bounce} type="button" aria-label={`Edit ${item.name}`} onClick={(e) => { e.preventDefault(); setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); setEditingCategoryColor(colorForCategory(item.name, categories)); setEditingCategoryBudget(item.budget.toString()); }} className="rounded-full p-2 text-[#789086] transition-colors hover:bg-[#edf2e9] hover:text-[#347d68]"><Edit3 size={14} /></motion.button>
-                        <motion.button {...bounce} type="button" aria-label={`Delete ${item.name}`} onClick={(e) => { e.preventDefault(); setCategoryToDelete(item.name); }} className="rounded-full p-2 text-[#a88e87] transition-colors hover:bg-[#fae9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></motion.button>
+                        <motion.button {...bounce} type="button" aria-label={`Edit ${item.name}`} onClick={(e) => requireAuth(e, () => { setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); setEditingCategoryColor(colorForCategory(item.name, categories)); setEditingCategoryBudget(item.budget.toString()); })} className="rounded-full p-2 text-[#789086] transition-colors hover:bg-[#edf2e9] hover:text-[#347d68]"><Edit3 size={14} /></motion.button>
+                        <motion.button {...bounce} type="button" aria-label={`Delete ${item.name}`} onClick={(e) => requireAuth(e, () => setCategoryToDelete(item.name))} className="rounded-full p-2 text-[#a88e87] transition-colors hover:bg-[#fae9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></motion.button>
                       </div>
                     </div>
                     <div className="mt-1 text-[11px] text-[#87968c]">{item.budget === 0 && item.spent === 0 ? 'No budget set' : item.budget === 0 ? `${fmtMoney(item.spent)} spent · no budget` : `${fmtMoney(item.spent)} spent`}</div>
@@ -813,8 +832,8 @@ function Home() {
         <section className="glass-card rounded-[24px] p-5 sm:p-6">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The little details</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Your ledger</h2></div><motion.button {...bounce} type="button" onClick={exportCsv} data-testid="button-export-csv" className="flex h-9 items-center gap-2 rounded-xl border border-[#dce5dc] bg-[#fffdf8]/70 px-3 text-xs font-semibold text-[#537364] hover:bg-[#edf2e9]"><Download size={14} />Download CSV</motion.button></div>
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
-            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by category</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by category" data-testid="select-filter-category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent"><option value="all">All categories</option>{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
-            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by tag</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by tag" data-testid="select-filter-tag" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent"><option value="all">All tags</option>{availableTags.map((item) => <option key={item} value={item}>#{item}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
+            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by category</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by category" data-testid="select-filter-category" value={categoryFilter} onChange={(event) => requireAuth(event, () => setCategoryFilter(event.target.value))} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent"><option value="all">All categories</option>{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
+            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by tag</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by tag" data-testid="select-filter-tag" value={tagFilter} onChange={(event) => requireAuth(event, () => setTagFilter(event.target.value))} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent"><option value="all">All tags</option>{availableTags.map((item) => <option key={item} value={item}>#{item}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
           </div>
           {monthExpenses.length ? filteredExpenses.length ? <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-left">
@@ -825,7 +844,7 @@ function Home() {
                 <td data-testid={`text-expense-tags-${item.id}`} className="py-3.5 pr-3"><div className="flex max-w-[170px] flex-wrap gap-1">{item.tags.map((tag) => <span key={tag} className="rounded-md bg-[#edf2e9] px-1.5 py-1 text-[10px] text-[#628675]">#{tag}</span>)}</div></td>
                 <td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td>
                 <td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td>
-                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><motion.button whileTap={{ scale: 0.9 }} transition={springTransition} type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={(e) => { e.preventDefault(); startEdit(item); }} className="rounded-full p-2 text-[#789086] opacity-75 transition-colors hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></motion.button><motion.button whileTap={{ scale: 0.9 }} transition={springTransition} type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={(e) => { e.preventDefault(); setExpenseToDelete(item.id); }} className="rounded-full p-2 text-[#a88e87] opacity-75 transition-colors hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></motion.button></div></td>
+                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><motion.button whileTap={{ scale: 0.9 }} transition={springTransition} type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={(e) => requireAuth(e, () => startEdit(item))} className="rounded-full p-2 text-[#789086] opacity-75 transition-colors hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></motion.button><motion.button whileTap={{ scale: 0.9 }} transition={springTransition} type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={(e) => requireAuth(e, () => setExpenseToDelete(item.id))} className="rounded-full p-2 text-[#a88e87] opacity-75 transition-colors hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></motion.button></div></td>
               </tr>)}</tbody>
             </table>
           </div> : <div className="rounded-2xl bg-[#f4f4ec]/65 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165]">No expenses match those filters</p><p className="mt-1 text-xs text-[#8a9990]">Try another category or tag.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
@@ -939,6 +958,16 @@ function Home() {
           </motion.div>
         </div>
       )}</AnimatePresence>
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onLoginSuccess={(user, guest = false) => {
+          setCurrentUser(user);
+          setIsGuest(guest);
+          setShowAuthModal(false);
+        }}
+      />
     </main>
   );
 }

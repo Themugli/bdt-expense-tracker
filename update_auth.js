@@ -1,62 +1,10 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { bounce } from '@/lib/motion';
-import { useState, useEffect, type FormEvent } from 'react';
-import {
-  ArrowRight, Check, Copy, HardDriveDownload, KeyRound, Lock, LockKeyhole,
-  LogOut, Mail, PlusCircle, ShieldAlert, ShieldCheck, Sparkles, UserCheck, Wallet, X, Eye, EyeOff
-} from 'lucide-react';
-import { supabase } from './lib/supabase';
+const fs = require('fs');
+const content = fs.readFileSync('artifacts/expense-tracker/src/auth.tsx', 'utf-8');
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  password?: string;
-}
-
-export const USERS_STORAGE_KEY = 'little-ledger-users-v2';
-export const SESSION_STORAGE_KEY = 'little-ledger-session-v2';
-
-export const DEFAULT_USERS: User[] = [];
-
-export function getStoredUsers(): User[] {
-  try {
-    const data = localStorage.getItem(USERS_STORAGE_KEY);
-    return data ? JSON.parse(data) : DEFAULT_USERS;
-  } catch {
-    return DEFAULT_USERS;
-  }
-}
-
-export function saveStoredUsers(users: User[]) {
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-}
-
-export function getActiveSession(): { user: User; isGuest: boolean } | null {
-  try {
-    const data = localStorage.getItem(SESSION_STORAGE_KEY);
-    return data ? JSON.parse(data) : null;
-  } catch {
-    return null;
-  }
-}
-
-export function saveActiveSession(session: { user: User; isGuest: boolean } | null) {
-  if (session) {
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
-  } else {
-    localStorage.removeItem(SESSION_STORAGE_KEY);
-  }
-}
-
-/* =========================================================================
-   AUTH LANDING SCREEN (Login / Sign-Up / Demo / Guest)
-   ========================================================================= */
-interface AuthLandingProps {
-  onLoginSuccess: (user: User, isGuest?: boolean) => void;
-}
-
-interface AuthModalProps {
+// Replace AuthLanding with AuthModal
+const newContent = content.replace(
+  /export function AuthLanding\(\{ onLoginSuccess \}: AuthLandingProps\) \{[\s\S]*?(?=\n\nexport const )|export function AuthLanding[\s\S]*$/m,
+  `interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: (user: User, isGuest?: boolean) => void;
@@ -114,7 +62,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
     setErrorMsg('');
     
     const localMatch = getStoredUsers().find(u => u.email.toLowerCase() === signupEmail.trim().toLowerCase());
-    const initialId = localMatch ? localMatch.id : `usr_${Date.now()}`;
+    const initialId = localMatch ? localMatch.id : \`usr_\${Date.now()}\`;
 
     const { data, error } = await supabase.auth.signUp({
       email: signupEmail.trim(),
@@ -151,7 +99,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
   }
 
   return (
-    <AnimatePresence>
+    <import_framer_motion.AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-10 sm:px-6">
           <motion.div 
@@ -183,18 +131,18 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
               <motion.button {...bounce}
                 type="button"
                 onClick={() => { setMode('login'); setErrorMsg(''); }}
-                className={`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition ${
+                className={\`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition \${
                   mode === 'login' ? 'bg-white text-[#24483c] shadow-sm' : 'text-[#7a8d81] hover:text-[#24483c]'
-                }`}
+                }\`}
               >
                 Log In
               </motion.button>
               <motion.button {...bounce}
                 type="button"
                 onClick={() => { setMode('signup'); setErrorMsg(''); }}
-                className={`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition ${
+                className={\`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition \${
                   mode === 'signup' ? 'bg-white text-[#24483c] shadow-sm' : 'text-[#7a8d81] hover:text-[#24483c]'
-                }`}
+                }\`}
               >
                 Create Account
               </motion.button>
@@ -337,6 +285,18 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </import_framer_motion.AnimatePresence>
   );
+}`
+);
+
+// We need to make sure AnimatePresence is imported correctly
+let finalContent = newContent.replace('<import_framer_motion.AnimatePresence>', '<AnimatePresence>').replace('</import_framer_motion.AnimatePresence>', '</AnimatePresence>');
+if (!finalContent.includes('AnimatePresence')) {
+    finalContent = finalContent.replace("import { motion } from 'framer-motion';", "import { motion, AnimatePresence } from 'framer-motion';");
+} else if (!finalContent.match(/import\s+\{[^}]*AnimatePresence[^}]*\}\s+from\s+['"]framer-motion['"]/)) {
+    finalContent = finalContent.replace("import { motion }", "import { motion, AnimatePresence }");
 }
+
+fs.writeFileSync('artifacts/expense-tracker/src/auth.tsx', finalContent);
+console.log('auth.tsx updated');
