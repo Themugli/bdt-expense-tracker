@@ -161,6 +161,50 @@ function Home() {
     setMonthlyIncome(Number.isFinite(savedIncome) && savedIncome >= 0 ? savedIncome : DEFAULT_MONTHLY_INCOME);
   }
 
+  useEffect(() => {
+    if (!currentUser || isGuest) return;
+    supabase.auth.getUser().then(({ data }) => {
+      const meta = data.user?.user_metadata;
+      if (meta) {
+        if (meta.categories) {
+          setCategories(meta.categories);
+          const catKey = `little-ledger-key-usr-${currentUser.id}`;
+          localStorage.setItem(catKey, JSON.stringify(meta.categories));
+        }
+        if (meta.monthly_income !== undefined) {
+          setMonthlyIncome(meta.monthly_income);
+          const incKey = `little-ledger-income-usr-${currentUser.id}`;
+          localStorage.setItem(incKey, JSON.stringify(meta.monthly_income));
+        }
+      }
+    });
+  }, [currentUser, isGuest]);
+
+  // Sync categories and income back to Supabase metadata automatically
+  useEffect(() => {
+    if (!currentUser || isGuest) return;
+    const timer = setTimeout(async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) return;
+      const meta = data.user.user_metadata || {};
+      
+      const currentCats = JSON.stringify(meta.categories || []);
+      const newCats = JSON.stringify(categories);
+      const currentInc = meta.monthly_income;
+      
+      if (currentCats !== newCats || currentInc !== monthlyIncome) {
+        await supabase.auth.updateUser({
+          data: {
+            ...meta,
+            categories,
+            monthly_income: monthlyIncome
+          }
+        });
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [categories, monthlyIncome, currentUser, isGuest]);
+
   const [activeTab, setActiveTab] = useState<'monthly' | 'yearly'>('monthly');
   const [selectedMonth, setSelectedMonth] = useState(monthOf(today));
   const [selectedYear, setSelectedYear] = useState(Number(today.slice(0, 4)));
