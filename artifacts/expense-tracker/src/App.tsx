@@ -32,7 +32,7 @@ import {
 const queryClient = new QueryClient();
 
 type Expense = { id: string; date: string; amount: number; category: string; note: string; tags: string[] };
-type Category = { name: string; budget: number };
+type Category = { name: string; budget: number; color?: string };
 const DEFAULT_MONTHLY_INCOME = 0;
 const EXPENSES_KEY = 'little-ledger-expenses-v1';
 const CATEGORIES_KEY = 'little-ledger-categories-v1';
@@ -46,7 +46,10 @@ const initialCategories: Category[] = [
   { name: 'Bills', budget: 0 },
   { name: 'Miscellaneous', budget: 0 },
 ];
-const categoryColors = ['#347d68', '#df8b68', '#d4ad48', '#6f9aaf', '#a088aa', '#8b9c75', '#cc7669'];
+const PREDEFINED_COLORS = [
+  '#347d68', '#df8b68', '#d4ad48', '#6f9aaf', '#a088aa', '#8b9c75', '#cc7669',
+  '#e2b72f', '#5e6884', '#9e5d4e', '#4c78a8', '#b57a55', '#6d8048', '#b2577a', '#746788'
+];
 const categoryAliases: Record<string, string> = {
   'Protein / Fitness': 'Fitness / Protein',
   'Miscellaneous / Savings': 'Miscellaneous',
@@ -116,9 +119,16 @@ function parseTags(value: string) {
   }
   return tags;
 }
+function hashString(str: string) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return Math.abs(hash);
+}
+
 function colorForCategory(name: string, categories: Category[]) {
-  const index = categories.findIndex((item) => item.name === name);
-  return categoryColors[Math.max(0, index) % categoryColors.length];
+  const category = categories.find((item) => item.name === name);
+  if (category?.color) return category.color;
+  return PREDEFINED_COLORS[hashString(name) % PREDEFINED_COLORS.length];
 }
 
 function Home() {
@@ -156,6 +166,7 @@ function Home() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
   const [editingCategoryTarget, setEditingCategoryTarget] = useState<string | null>(null);
+  const [colorPickerTarget, setColorPickerTarget] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
 
   useEffect(() => {
@@ -319,6 +330,10 @@ function Home() {
     setMonthlyIncome(next);
     setEditingIncome(false);
   }
+  function changeCategoryColor(name: string, color: string) {
+    setCategories((current) => current.map((item) => item.name === name ? { ...item, color } : item));
+  }
+
   function changeBudget(name: string, raw: string) {
     const cleaned = raw.replace(/^-/, '').replace(/^0+(?=\d)/, '');
     const next = Math.max(0, Number(cleaned) || 0);
@@ -634,11 +649,25 @@ function Home() {
                         />
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 relative">
+                        <button type="button" onClick={() => setColorPickerTarget(colorPickerTarget === item.name ? null : item.name)} aria-label={`Change color for ${item.name}`} className="h-3 w-3 shrink-0 rounded-full shadow-sm hover:scale-110 transition-transform" style={{ backgroundColor: colorForCategory(item.name, categories) }} />
+                        {colorPickerTarget === item.name && (
+                          <div className="absolute top-full left-0 mt-2 z-10 w-48 rounded-xl bg-white p-3 shadow-xl border border-[#dce5dc]">
+                             <div className="flex flex-wrap gap-2 mb-3">
+                               {PREDEFINED_COLORS.map(c => (
+                                 <button type="button" aria-label={`Select color ${c}`} key={c} onClick={() => { changeCategoryColor(item.name, c); setColorPickerTarget(null); }} className="h-6 w-6 rounded-full hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: c }} />
+                               ))}
+                             </div>
+                             <div className="border-t border-[#e6ebe3] pt-3 flex items-center justify-between">
+                               <span className="text-xs font-semibold text-[#789086]">Custom color</span>
+                               <input type="color" value={colorForCategory(item.name, categories)} onChange={(e) => changeCategoryColor(item.name, e.target.value)} className="h-7 w-7 cursor-pointer border-0 p-0 rounded bg-transparent" />
+                             </div>
+                          </div>
+                        )}
                         <div className="truncate text-sm font-semibold text-[#416356]">{item.name}</div>
                         <div className="flex gap-1 opacity-60 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          <button type="button" onClick={() => { setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); }} className="grid h-6 w-6 place-items-center rounded bg-[#edf2e9] text-[#789086] hover:text-[#347d68] hover:bg-[#e2eadc]"><Edit3 size={12} /></button>
-                          <button type="button" onClick={() => deleteCategory(item.name)} className="grid h-6 w-6 place-items-center rounded bg-[#fae9e4] text-[#a88e87] hover:text-[#ba5b4d] hover:bg-[#f3d9d3]"><Trash2 size={12} /></button>
+                          <button type="button" onClick={() => { setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); setColorPickerTarget(null); }} className="grid h-6 w-6 place-items-center rounded bg-[#edf2e9] text-[#789086] hover:text-[#347d68] hover:bg-[#e2eadc]"><Edit3 size={12} /></button>
+                          <button type="button" onClick={() => { deleteCategory(item.name); setColorPickerTarget(null); }} className="grid h-6 w-6 place-items-center rounded bg-[#fae9e4] text-[#a88e87] hover:text-[#ba5b4d] hover:bg-[#f3d9d3]"><Trash2 size={12} /></button>
                         </div>
                       </div>
                     )}
