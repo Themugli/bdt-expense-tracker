@@ -216,6 +216,7 @@ function Home() {
   const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
   const [editingIncome, setEditingIncome] = useState(false);
   const [incomeDraft, setIncomeDraft] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -249,10 +250,13 @@ function Home() {
   useEffect(() => { setCategoryFilter('all'); setTagFilter('all'); }, [selectedMonth]);
 
   useEffect(() => {
-    if (editingId) {
+    if (editingId || expenseToDelete) {
       document.body.style.overflow = 'hidden';
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') clearForm();
+        if (e.key === 'Escape') {
+          if (editingId) clearForm();
+          if (expenseToDelete) setExpenseToDelete(null);
+        }
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => {
@@ -260,7 +264,7 @@ function Home() {
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [editingId]);
+  }, [editingId, expenseToDelete]);
 
   const monthExpenses = useMemo(
     () => expenses.filter((entry) => monthOf(entry.date) === selectedMonth).sort((a, b) => b.date.localeCompare(a.date)),
@@ -817,7 +821,7 @@ function Home() {
                 <td data-testid={`text-expense-tags-${item.id}`} className="py-3.5 pr-3"><div className="flex max-w-[170px] flex-wrap gap-1">{item.tags.map((tag) => <span key={tag} className="rounded-md bg-[#edf2e9] px-1.5 py-1 text-[10px] text-[#628675]">#{tag}</span>)}</div></td>
                 <td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td>
                 <td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td>
-                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><button type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></button><button type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => { if (window.confirm('Delete this expense from your ledger?')) void deleteExpense(item.id); }} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></button></div></td>
+                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><button type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></button><button type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => setExpenseToDelete(item.id)} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></button></div></td>
               </tr>)}</tbody>
             </table>
           </div> : <div className="rounded-2xl bg-[#f4f4ec]/65 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165]">No expenses match those filters</p><p className="mt-1 text-xs text-[#8a9990]">Try another category or tag.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
@@ -867,6 +871,23 @@ function Home() {
         </>}
         <footer className="flex items-center justify-center gap-2 py-7 text-[11px] text-[#93a097]"><span>Just for you</span><span className="h-1 w-1 rounded-full bg-[#d78967]" /><span>Your numbers never leave this device</span></footer>
       </div>
+      
+      {expenseToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="absolute inset-0" onClick={() => setExpenseToDelete(null)}></div>
+          <div className="relative glass-card max-w-sm w-full rounded-[24px] border border-white/80 p-6 text-center bg-white/95 z-10 shadow-2xl">
+            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[#fae9e4] text-[#b8584b]">
+              <Trash2 size={24} />
+            </div>
+            <h3 className="font-display text-lg font-bold text-[#294d40] mb-2">Delete Expense?</h3>
+            <p className="text-sm text-[#627a6d] mb-6">Are you sure you want to delete this expense from your ledger? This action cannot be undone.</p>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setExpenseToDelete(null)} className="flex-1 rounded-xl bg-[#f4f5ef] py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</button>
+              <button type="button" onClick={() => { void deleteExpense(expenseToDelete); setExpenseToDelete(null); }} className="flex-1 rounded-xl bg-[#b8584b] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a04b40] transition">Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
