@@ -625,12 +625,13 @@ export function useExpenses({ ledgerId, isGuest }: { ledgerId: string | null; is
     const onOnline = async () => {
       const queue = JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]');
       if (queue.length > 0) {
+        // Clear immediately before awaiting, so new inserts go into a fresh queue
+        localStorage.removeItem(SYNC_QUEUE_KEY);
         for (const item of queue) {
           if (item.type === 'insert') {
              await supabase.from('expenses').insert(item.payload).catch(console.error);
           }
         }
-        localStorage.removeItem(SYNC_QUEUE_KEY);
       }
       void api.syncNow(sc);
     };
