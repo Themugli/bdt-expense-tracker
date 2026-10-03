@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import {
   ArrowRight, Check, Copy, HardDriveDownload, KeyRound, Lock, LockKeyhole,
-  LogOut, Mail, PlusCircle, ShieldAlert, ShieldCheck, Sparkles, UserCheck, Wallet, X
+  LogOut, Mail, PlusCircle, ShieldAlert, ShieldCheck, Sparkles, UserCheck, Wallet, X, Eye, EyeOff
 } from 'lucide-react';
 
 export interface User {
@@ -73,6 +73,9 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
 
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -260,13 +263,20 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
                   <div className="flex h-11 items-center rounded-xl border border-[#dce5dc] bg-white px-3 focus-within:border-[#347d68]">
                     <Lock size={16} className="mr-2.5 text-[#8a9d90]" />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       placeholder="••••••••"
                       className="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none placeholder:text-[#b4c0b7]"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((p) => !p)}
+                      className="ml-2 p-1 text-[#8a9d90] hover:text-[#24483c] transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                   </div>
                 </div>
 
@@ -318,15 +328,24 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
 
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-[#667e70]">Create Password</label>
-                  <input
-                    type="password"
-                    required
-                    minLength={4}
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    placeholder="At least 4 characters"
-                    className="h-10 w-full rounded-xl border border-[#dce5dc] bg-white px-3 text-sm font-medium text-[#24483c] outline-none"
-                  />
+                  <div className="flex h-10 items-center rounded-xl border border-[#dce5dc] bg-white px-3 focus-within:border-[#347d68]">
+                    <input
+                      type={showSignupPassword ? "text" : "password"}
+                      required
+                      minLength={4}
+                      value={signupPassword}
+                      onChange={(e) => setSignupPassword(e.target.value)}
+                      placeholder="At least 4 characters"
+                      className="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none placeholder:text-[#b4c0b7]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignupPassword((p) => !p)}
+                      className="ml-2 p-1 text-[#8a9d90] hover:text-[#24483c] transition-colors"
+                    >
+                      {showSignupPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
 
                 <button
