@@ -217,6 +217,7 @@ function Home() {
   const [customCategoryMode, setCustomCategoryMode] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [note, setNote] = useState('');
+  const [amountError, setAmountError] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
   const [editingIncome, setEditingIncome] = useState(false);
@@ -375,13 +376,19 @@ function Home() {
     setTagInput('');
     setNote('');
     setEditingId(null);
+    setAmountError(false);
   }
   function submitExpense(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsedAmount = Number(amount);
     const typedCategory = customCategoryMode ? customName.trim() : category;
     const chosenCategory = categories.find((item) => item.name.toLocaleLowerCase() === typedCategory.toLocaleLowerCase())?.name ?? typedCategory;
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0 || !date || !chosenCategory) return;
+    if (!amount || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setAmountError(true);
+      return;
+    }
+    setAmountError(false);
+    if (!date || !chosenCategory) return;
     if (!categories.some((item) => item.name === chosenCategory)) {
       setCategories((current) => [...current, { name: chosenCategory, budget: 0 }]);
     }
@@ -657,9 +664,11 @@ function Home() {
         <div className="mb-5 grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
           {(() => {
             const formContent = (
-              <form onSubmit={submitExpense} className="space-y-3">
+              <form onSubmit={submitExpense} noValidate className="space-y-3">
                 <div className="grid grid-cols-[1fr_1.05fr] gap-3">
-                  <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Amount</span><div className="flex h-11 items-center rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 focus-within:border-[#84a998]"><span className="mr-2 text-sm font-semibold text-[#779284]">৳</span><input aria-label="Amount in BDT" data-testid="input-expense-amount" type="number" min="0.01" step="0.01" required value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0.00" className="w-full bg-transparent text-sm font-semibold text-[#315548] outline-none placeholder:font-normal placeholder:text-[#b7c0b9]" /></div></label>
+                  <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Amount</span><div className={`flex h-11 items-center rounded-xl border ${amountError ? 'border-[#b8584b]' : 'border-[#dce5dc] focus-within:border-[#84a998]'} bg-[#fffdf8]/75 px-3`}><span className={`mr-2 text-sm font-semibold ${amountError ? 'text-[#b8584b]' : 'text-[#779284]'}`}>৳</span><input aria-label="Amount in BDT" data-testid="input-expense-amount" type="number" min="0.01" step="0.01" value={amount} onChange={(event) => { setAmount(event.target.value); if (amountError) setAmountError(false); }} placeholder="0.00" className={`w-full bg-transparent text-sm font-semibold ${amountError ? 'text-[#b8584b]' : 'text-[#315548]'} outline-none placeholder:font-normal placeholder:text-[#b7c0b9]`} /></div>
+                  {amountError && <span className="mt-1 block text-[10px] font-semibold text-[#b8584b]">Please enter a valid amount</span>}
+                  </label>
                   <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Date</span><input aria-label="Expense date" data-testid="input-expense-date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]" /></label>
                 </div>
                 {!customCategoryMode ? <div>
@@ -786,8 +795,8 @@ function Home() {
                       <span className="h-3 w-3 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: colorForCategory(item.name, categories) }} />
                       <div className="truncate text-sm font-semibold text-[#416356]">{item.name}</div>
                       <div className="flex gap-1 opacity-60 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <motion.button {...bounce} type="button" aria-label={`Edit ${item.name}`} onClick={() => { setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); setEditingCategoryColor(colorForCategory(item.name, categories)); setEditingCategoryBudget(item.budget.toString()); }} className="grid h-6 w-6 place-items-center rounded bg-[#edf2e9] text-[#789086] hover:text-[#347d68] hover:bg-[#e2eadc]"><Edit3 size={12} /></motion.button>
-                        <motion.button {...bounce} type="button" aria-label={`Delete ${item.name}`} onClick={() => setCategoryToDelete(item.name)} className="grid h-6 w-6 place-items-center rounded bg-[#fae9e4] text-[#a88e87] hover:text-[#ba5b4d] hover:bg-[#f3d9d3]"><Trash2 size={12} /></motion.button>
+                        <motion.button {...bounce} type="button" aria-label={`Edit ${item.name}`} onClick={(e) => { e.preventDefault(); setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); setEditingCategoryColor(colorForCategory(item.name, categories)); setEditingCategoryBudget(item.budget.toString()); }} className="rounded-full p-2 text-[#789086] transition-colors hover:bg-[#edf2e9] hover:text-[#347d68]"><Edit3 size={14} /></motion.button>
+                        <motion.button {...bounce} type="button" aria-label={`Delete ${item.name}`} onClick={(e) => { e.preventDefault(); setCategoryToDelete(item.name); }} className="rounded-full p-2 text-[#a88e87] transition-colors hover:bg-[#fae9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></motion.button>
                       </div>
                     </div>
                     <div className="mt-1 text-[11px] text-[#87968c]">{item.budget === 0 && item.spent === 0 ? 'No budget set' : item.budget === 0 ? `${fmtMoney(item.spent)} spent · no budget` : `${fmtMoney(item.spent)} spent`}</div>
@@ -810,14 +819,14 @@ function Home() {
           {monthExpenses.length ? filteredExpenses.length ? <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-left">
               <thead><tr className="border-b border-[#e6ebe3] text-[10px] font-semibold uppercase tracking-[.1em] text-[#95a198]"><th className="pb-3 pr-3 font-semibold">Date</th><th className="pb-3 pr-3 font-semibold">Category</th><th className="pb-3 pr-3 font-semibold">Tags</th><th className="pb-3 pr-3 font-semibold">Note</th><th className="pb-3 pr-3 text-right font-semibold">Amount</th><th className="pb-3 text-right font-semibold">Edit</th></tr></thead>
-              <tbody><AnimatePresence initial={false}>{filteredExpenses.map((item) => <motion.tr key={item.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={springTransition} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] last:border-0 hover:bg-[#f7f7f0]/65">
+              <tbody>{filteredExpenses.map((item) => <tr key={item.id} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] last:border-0 hover:bg-[#f7f7f0]/65">
                 <td data-testid={`text-expense-date-${item.id}`} className="py-3.5 pr-3 text-xs text-[#74877d]">{new Date(`${item.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td>
                 <td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-[#4d6c5e]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td>
                 <td data-testid={`text-expense-tags-${item.id}`} className="py-3.5 pr-3"><div className="flex max-w-[170px] flex-wrap gap-1">{item.tags.map((tag) => <span key={tag} className="rounded-md bg-[#edf2e9] px-1.5 py-1 text-[10px] text-[#628675]">#{tag}</span>)}</div></td>
                 <td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td>
                 <td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td>
-                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><motion.button {...bounce} type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></motion.button><motion.button {...bounce} type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => setExpenseToDelete(item.id)} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></motion.button></div></td>
-              </motion.tr>)}</AnimatePresence></tbody>
+                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><motion.button {...bounce} type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={(e) => { e.preventDefault(); startEdit(item); }} className="rounded-full p-2 text-[#789086] opacity-75 transition-colors hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></motion.button><motion.button {...bounce} type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={(e) => { e.preventDefault(); setExpenseToDelete(item.id); }} className="rounded-full p-2 text-[#a88e87] opacity-75 transition-colors hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></motion.button></div></td>
+              </tr>)}</tbody>
             </table>
           </div> : <div className="rounded-2xl bg-[#f4f4ec]/65 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165]">No expenses match those filters</p><p className="mt-1 text-xs text-[#8a9990]">Try another category or tag.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
           <div className="mt-4 flex items-center justify-between border-t border-[#e6ebe3] pt-4 text-xs"><span className="text-[#839289]">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'} in {monthLabel(selectedMonth)}</span><span className="font-semibold text-[#426457]">Month total <strong data-testid="text-ledger-total" className="ml-2 font-display text-sm">{fmtMoney(spent)}</strong></span></div>
