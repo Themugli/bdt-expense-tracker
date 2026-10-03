@@ -617,7 +617,7 @@ function Home() {
             {categoryTotals.map((item) => {
               const ratio = item.budget > 0 ? item.spent / item.budget : item.spent > 0 ? 1 : 0;
               const barColor = ratio >= 1 ? '#c66655' : ratio >= .75 ? '#d4aa46' : '#62a07b';
-              return <div key={item.name} className="rounded-2xl border border-[#e4e9e1] bg-[#fffdf8]/45 p-4" data-testid={`budget-row-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+              return <div key={item.name} className="group rounded-2xl border border-[#e4e9e1] bg-[#fffdf8]/45 p-4" data-testid={`budget-row-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
                 <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     {editingCategoryTarget === item.name ? (
@@ -632,9 +632,9 @@ function Home() {
                         />
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 group">
+                      <div className="flex items-center gap-2">
                         <div className="truncate text-sm font-semibold text-[#416356]">{item.name}</div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-1 opacity-60 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           <button type="button" onClick={() => { setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); }} className="grid h-6 w-6 place-items-center rounded bg-[#edf2e9] text-[#789086] hover:text-[#347d68] hover:bg-[#e2eadc]"><Edit3 size={12} /></button>
                           <button type="button" onClick={() => deleteCategory(item.name)} className="grid h-6 w-6 place-items-center rounded bg-[#fae9e4] text-[#a88e87] hover:text-[#ba5b4d] hover:bg-[#f3d9d3]"><Trash2 size={12} /></button>
                         </div>
