@@ -320,7 +320,8 @@ function Home() {
     setEditingIncome(false);
   }
   function changeBudget(name: string, raw: string) {
-    const next = Math.max(0, Number(raw) || 0);
+    const cleaned = raw.replace(/^-/, '').replace(/^0+(?=\d)/, '');
+    const next = Math.max(0, Number(cleaned) || 0);
     setCategories((current) => current.map((item) => item.name === name ? { ...item, budget: next } : item));
   }
 
@@ -653,7 +654,7 @@ function Home() {
                     )}
                     <div className="mt-1 text-[11px] text-[#87968c]">{item.budget === 0 && item.spent === 0 ? 'No budget set' : item.budget === 0 ? `${fmtMoney(item.spent)} spent · no budget` : `${fmtMoney(item.spent)} spent`}</div>
                   </div>
-                  <label className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#f0f2eb] px-2 py-1.5 text-[11px] text-[#87968c]"><span>Budget</span><span className="font-semibold text-[#547165]">৳</span><input aria-label={`${item.name} monthly budget in BDT`} data-testid={`input-budget-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} type="number" min="0" step="50" value={item.budget} onChange={(event) => changeBudget(item.name, event.target.value)} className="w-[66px] bg-transparent text-right text-xs font-semibold text-[#416356] outline-none" /></label>
+                  <label className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#f0f2eb] px-2 py-1.5 text-[11px] text-[#87968c]"><span>Budget</span><span className="font-semibold text-[#547165]">৳</span><input aria-label={`${item.name} monthly budget in BDT`} data-testid={`input-budget-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} type="number" min="0" step="50" value={item.budget.toString()} onChange={(event) => changeBudget(item.name, event.target.value)} onKeyDown={(e) => { if (['-', '+', 'e', 'E', '.'].includes(e.key)) e.preventDefault(); }} onBlur={(e) => { e.target.value = item.budget.toString(); }} className="w-[66px] bg-transparent text-right text-xs font-semibold text-[#416356] outline-none" /></label>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[#e8ece4]"><div data-testid={`progress-budget-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="h-full rounded-full transition-[width] duration-500" style={{ width: `${item.budget > 0 ? Math.min(100, ratio * 100) : item.spent > 0 ? 100 : 0}%`, backgroundColor: barColor }} /></div>
                 <div className="mt-2 flex justify-between text-[10px] text-[#91a096]"><span>{item.budget > 0 ? `${Math.round(ratio * 100)}% of budget` : 'Spending tracked'}</span><span>{item.budget > 0 ? `${fmtMoney(Math.max(item.budget - item.spent, 0))} left` : 'Set budget above'}</span></div>
