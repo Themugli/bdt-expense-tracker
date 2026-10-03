@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion';
+import { bounce } from '@/lib/motion';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
@@ -46,14 +48,14 @@ const PasswordField = ({
         required
         className="flex-1 px-4 py-3 bg-transparent outline-none text-[#294d40]"
       />
-      <button
+      <motion.button {...bounce}
         type="button"
         onClick={onToggle}
         className="px-3 text-[#87968c] hover:text-[#347d68] transition-colors"
         aria-label={show ? 'Hide password' : 'Show password'}
       >
         {show ? <EyeOffIcon /> : <EyeIcon />}
-      </button>
+      </motion.button>
     </div>
   </div>
 );
@@ -199,10 +201,10 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
           <form onSubmit={handleResetPassword} className="space-y-4">
             <PasswordField label="New Password" id="reset-pw" value={password} onChange={setPassword} show={showPassword} onToggle={() => setShowPassword(p => !p)} />
             <PasswordField label="Confirm New Password" id="reset-confirm-pw" value={confirmPassword} onChange={setConfirmPassword} show={showConfirmPassword} onToggle={() => setShowConfirmPassword(p => !p)} />
-            <button type="submit" disabled={loading || !password || !confirmPassword}
+            <motion.button {...bounce} type="submit" disabled={loading || !password || !confirmPassword}
               className="w-full bg-[#559778] text-white py-3 rounded-xl font-semibold hover:bg-[#437a60] transition-colors disabled:opacity-50 mt-2">
               {loading ? 'Updating…' : 'Update Password'}
-            </button>
+            </motion.button>
           </form>
         </div>
       </div>
@@ -227,14 +229,14 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
                 className="w-full px-4 py-3 border border-[#e6ebe3] rounded-xl focus:ring-2 focus:ring-[#559778]/30 focus:border-[#559778] outline-none transition-all text-[#294d40] bg-[#fafaf8]"
                 placeholder="you@example.com" />
             </div>
-            <button type="submit" disabled={loading || !email}
+            <motion.button {...bounce} type="submit" disabled={loading || !email}
               className="w-full bg-[#559778] text-white py-3 rounded-xl font-semibold hover:bg-[#437a60] transition-colors disabled:opacity-50">
               {loading ? 'Sending…' : 'Send Reset Link'}
-            </button>
-            <button type="button" onClick={() => { setMode('login'); clearForm(); }}
+            </motion.button>
+            <motion.button {...bounce} type="button" onClick={() => { setMode('login'); clearForm(); }}
               className="w-full py-2.5 text-sm text-[#87968c] hover:text-[#294d40] transition-colors">
               ← Back to Sign In
-            </button>
+            </motion.button>
           </form>
         </div>
       </div>
@@ -256,14 +258,14 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
 
         {/* Mode toggle */}
         <div className="flex rounded-2xl border border-[#dce5dc] bg-[#ebeee7] p-1 mb-6">
-          <button type="button" onClick={() => { setMode('login'); clearForm(); }}
+          <motion.button {...bounce} type="button" onClick={() => { setMode('login'); clearForm(); }}
             className={`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition ${mode === 'login' ? 'bg-white text-[#24483c] shadow-sm' : 'text-[#7a8d81] hover:text-[#24483c]'}`}>
             Sign In
-          </button>
-          <button type="button" onClick={() => { setMode('signup'); clearForm(); }}
+          </motion.button>
+          <motion.button {...bounce} type="button" onClick={() => { setMode('signup'); clearForm(); }}
             className={`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition ${mode === 'signup' ? 'bg-white text-[#24483c] shadow-sm' : 'text-[#7a8d81] hover:text-[#24483c]'}`}>
             Create Account
-          </button>
+          </motion.button>
         </div>
 
         {error && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">{error}</div>}
@@ -295,17 +297,17 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
           {/* Forgot password link */}
           {mode === 'login' && (
             <div className="text-right -mt-1">
-              <button type="button" onClick={() => { setMode('forgot'); clearForm(); }}
+              <motion.button {...bounce} type="button" onClick={() => { setMode('forgot'); clearForm(); }}
                 className="text-xs text-[#559778] hover:text-[#347d68] font-semibold transition-colors">
                 Forgot password?
-              </button>
+              </motion.button>
             </div>
           )}
 
-          <button type="submit" disabled={loading || !email || !password || (mode === 'signup' && !confirmPassword)}
+          <motion.button {...bounce} type="submit" disabled={loading || !email || !password || (mode === 'signup' && !confirmPassword)}
             className="w-full bg-[#559778] text-white py-3 rounded-xl font-semibold hover:bg-[#437a60] transition-colors disabled:opacity-50 mt-1">
             {loading ? 'Please wait…' : mode === 'login' ? 'Sign In' : 'Create Account'}
-          </button>
+          </motion.button>
         </form>
       </div>
     </div>

@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion';
+import { bounce } from '@/lib/motion';
 import { useState, useEffect, type FormEvent } from 'react';
 import {
   ArrowRight, Check, Copy, HardDriveDownload, KeyRound, Lock, LockKeyhole,
@@ -204,7 +206,7 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
           <div className="border-t border-[#e2eae0] bg-[#f8f7f2]/90 p-7 sm:p-10 md:border-l md:border-t-0 flex flex-col justify-center">
             {/* View Toggle */}
             <div className="mb-6 flex rounded-2xl border border-[#dce5dc] bg-[#ebeee7] p-1">
-              <button
+              <motion.button {...bounce}
                 type="button"
                 onClick={() => { setMode('login'); setErrorMsg(''); }}
                 className={`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition ${
@@ -212,8 +214,8 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
                 }`}
               >
                 Log In
-              </button>
-              <button
+              </motion.button>
+              <motion.button {...bounce}
                 type="button"
                 onClick={() => { setMode('signup'); setErrorMsg(''); }}
                 className={`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition ${
@@ -221,7 +223,7 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
                 }`}
               >
                 Create Account
-              </button>
+              </motion.button>
             </div>
 
             {errorMsg && (
@@ -257,13 +259,13 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
                       onChange={(e) => setLoginPassword(e.target.value)}
                       className="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none placeholder:text-[#b4c0b7]"
                     />
-                    <button
+                    <motion.button {...bounce}
                       type="button"
                       onClick={() => setShowPassword((p) => !p)}
                       className="ml-2 p-1 text-[#8a9d90] hover:text-[#24483c] transition-colors"
                     >
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
 
@@ -279,13 +281,13 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
                   </label>
                 </div>
 
-                <button
+                <motion.button {...bounce}
                   type="submit"
                   className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-bold text-white shadow-sm hover:bg-[#2d705d] transition"
                 >
                   <span>Log In to Ledger</span>
                   <ArrowRight size={16} />
-                </button>
+                </motion.button>
               </form>
             ) : (
               <form onSubmit={handleSignup} className="space-y-3.5">
@@ -322,23 +324,23 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
                       onChange={(e) => setSignupPassword(e.target.value)}
                       className="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none placeholder:text-[#b4c0b7]"
                     />
-                    <button
+                    <motion.button {...bounce}
                       type="button"
                       onClick={() => setShowSignupPassword((p) => !p)}
                       className="ml-2 p-1 text-[#8a9d90] hover:text-[#24483c] transition-colors"
                     >
                       {showSignupPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
 
-                <button
+                <motion.button {...bounce}
                   type="submit"
                   className="w-full h-11 mt-1 flex items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-bold text-white shadow-sm hover:bg-[#2d705d] transition"
                 >
                   <span>Create Account &amp; Continue</span>
                   <Check size={16} />
-                </button>
+                </motion.button>
               </form>
             )}
 
@@ -351,13 +353,13 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
             </div>
 
             <div className="grid grid-cols-1 gap-3">
-              <button
+              <motion.button {...bounce}
                 type="button"
                 onClick={handleGuestMode}
                 className="h-10 flex items-center justify-center gap-2 rounded-xl border border-[#dce5dc] bg-white/70 px-3 text-xs font-semibold text-[#627a6d] hover:bg-white transition"
               >
                 <UserCheck size={14} /> Continue as Guest
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>

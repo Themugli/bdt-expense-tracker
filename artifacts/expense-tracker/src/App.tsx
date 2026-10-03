@@ -1,3 +1,5 @@
+import { motion, AnimatePresence } from 'framer-motion';
+import { bounce, overlayFade, modalPop, springTransition } from '@/lib/motion';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from './lib/supabase';
@@ -519,7 +521,7 @@ function Home() {
           <div className="flex items-center gap-3">
             {/* User Profile Menu */}
             <div className="relative">
-              <button
+              <motion.button {...bounce}
                 type="button"
                 onClick={() => setUserMenuOpen((prev) => !prev)}
                 className="flex items-center gap-2.5 rounded-2xl border border-[#dce5dc] bg-white/90 p-1.5 pr-3 hover:bg-white transition shadow-sm"
@@ -532,7 +534,7 @@ function Home() {
                   <div className="text-[10px] text-[#7f9086] leading-tight">{isGuest ? 'Guest Mode (Local)' : 'Personal Account'}</div>
                 </div>
                 <ChevronDown size={14} className="text-[#86968c]" />
-              </button>
+              </motion.button>
 
               {userMenuOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-[#dce5dc] bg-white p-2 shadow-xl z-40 animate-fade-in">
@@ -541,7 +543,7 @@ function Home() {
                     <div className="text-[11px] text-[#819087] truncate">{currentUser.email}</div>
                   </div>
                   <div className="pt-1 border-t border-[#edf0e9]">
-                    <button
+                    <motion.button {...bounce}
                       type="button"
                       onClick={() => {
                         setUserMenuOpen(false);
@@ -553,7 +555,7 @@ function Home() {
                     >
                       <LogOut size={16} />
                       <span>Log Out</span>
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
               )}
@@ -567,7 +569,7 @@ function Home() {
             <h1 className="font-display text-[32px] font-bold leading-tight tracking-[-.055em] text-[#24483c] sm:text-[42px]">{activeTab === 'monthly' ? <>Your money, <span className="text-[#d78967]">this month.</span></> : <>A year in <span className="text-[#d78967]">perspective.</span></>}</h1>
           </div>
           {activeTab === 'monthly' ? <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[#dce5dc] bg-[#fbfaf5]/80 p-2 sm:w-auto">
-            <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month" data-testid="button-previous-month" className="grid h-9 w-9 place-items-center rounded-xl text-[#597369] hover:bg-[#edf2e9]"><ArrowLeft size={16} /></button>
+            <motion.button {...bounce} type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month" data-testid="button-previous-month" className="grid h-9 w-9 place-items-center rounded-xl text-[#597369] hover:bg-[#edf2e9]"><ArrowLeft size={16} /></motion.button>
             <label className="flex min-w-[160px] flex-1 items-center justify-center gap-2 px-1 text-sm font-semibold text-[#355a4d] sm:flex-none">
               <CalendarDays size={16} className="text-[#789086]" />
               <span className="sr-only">Selected month</span>
@@ -577,19 +579,19 @@ function Home() {
                 setSelectedYear(Number(event.target.value.slice(0, 4)));
               }} className="w-[145px] cursor-pointer bg-transparent text-center text-sm font-semibold text-[#355a4d]" />
             </label>
-            <button type="button" onClick={() => shiftMonth(1)} aria-label="Next month" data-testid="button-next-month" className="grid h-9 w-9 place-items-center rounded-xl text-[#597369] hover:bg-[#edf2e9]"><ArrowRight size={16} /></button>
+            <motion.button {...bounce} type="button" onClick={() => shiftMonth(1)} aria-label="Next month" data-testid="button-next-month" className="grid h-9 w-9 place-items-center rounded-xl text-[#597369] hover:bg-[#edf2e9]"><ArrowRight size={16} /></motion.button>
           </div> : <label className="flex items-center gap-2 rounded-2xl border border-[#dce5dc] bg-[#fbfaf5]/80 px-4 py-3 text-sm font-semibold text-[#355a4d]">
             <CalendarDays size={16} className="text-[#789086]" />
             <span>Year</span>
-            <select aria-label="Analytics year" data-testid="select-analytics-year" value={selectedYear} onChange={(event) => setSelectedYear(Number(event.target.value))} className="cursor-pointer bg-transparent text-sm font-semibold text-[#355a4d] outline-none">
+            <span className="relative inline-flex items-center"><motion.select {...bounce} aria-label="Analytics year" data-testid="select-analytics-year" value={selectedYear} onChange={(event) => setSelectedYear(Number(event.target.value))} className="cursor-pointer bg-transparent text-sm font-semibold text-[#355a4d] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:border-[#347d68] focus:ring-2 focus:ring-[#347d68]/50 focus:ring-opacity-50">
               {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
-            </select>
+            </motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span>
           </label>}
         </section>
 
         <nav aria-label="Ledger views" className="mb-5 flex rounded-2xl border border-[#dce5dc] bg-[#f3f4ed]/80 p-1">
-          <button type="button" aria-current={activeTab === 'monthly' ? 'page' : undefined} data-testid="tab-monthly-ledger" onClick={() => setActiveTab('monthly')} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${activeTab === 'monthly' ? 'bg-white text-[#315548] shadow-sm' : 'text-[#819087] hover:text-[#355a4d]'}`}><CalendarDays size={16} />Monthly Ledger</button>
-          <button type="button" aria-current={activeTab === 'yearly' ? 'page' : undefined} data-testid="tab-yearly-overview" onClick={() => setActiveTab('yearly')} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${activeTab === 'yearly' ? 'bg-white text-[#315548] shadow-sm' : 'text-[#819087] hover:text-[#355a4d]'}`}><BarChart3 size={16} />Yearly Overview</button>
+          <motion.button {...bounce} type="button" aria-current={activeTab === 'monthly' ? 'page' : undefined} data-testid="tab-monthly-ledger" onClick={() => setActiveTab('monthly')} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${activeTab === 'monthly' ? 'bg-white text-[#315548] shadow-sm' : 'text-[#819087] hover:text-[#355a4d]'}`}><CalendarDays size={16} />Monthly Ledger</motion.button>
+          <motion.button {...bounce} type="button" aria-current={activeTab === 'yearly' ? 'page' : undefined} data-testid="tab-yearly-overview" onClick={() => setActiveTab('yearly')} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${activeTab === 'yearly' ? 'bg-white text-[#315548] shadow-sm' : 'text-[#819087] hover:text-[#355a4d]'}`}><BarChart3 size={16} />Yearly Overview</motion.button>
         </nav>
 
         {activeTab === 'monthly' ? <>
@@ -604,11 +606,11 @@ function Home() {
                 {editingIncome ? <form onSubmit={saveIncome} className="flex flex-wrap items-center gap-2">
                   <span className="font-display text-2xl font-bold text-[#24483c]">৳</span>
                   <input aria-label="Monthly income in BDT" data-testid="input-monthly-income" type="number" min="0" step="0.01" required autoFocus value={incomeDraft} onChange={(event) => setIncomeDraft(event.target.value)} className="h-11 w-36 rounded-xl border border-[#cbdace] bg-white/70 px-3 text-lg font-semibold text-[#24483c] outline-none focus:border-[#84a998]" />
-                  <button type="submit" data-testid="button-save-income" className="h-9 rounded-lg bg-[#347d68] px-3 text-xs font-semibold text-white hover:bg-[#2d705d]">Save</button>
-                  <button type="button" aria-label="Cancel income edit" data-testid="button-cancel-income" onClick={() => setEditingIncome(false)} className="grid h-9 w-9 place-items-center rounded-lg text-[#768980] hover:bg-[#edf1e8]"><X size={16} /></button>
+                  <motion.button {...bounce} type="submit" data-testid="button-save-income" className="h-9 rounded-lg bg-[#347d68] px-3 text-xs font-semibold text-white hover:bg-[#2d705d]">Save</motion.button>
+                  <motion.button {...bounce} type="button" aria-label="Cancel income edit" data-testid="button-cancel-income" onClick={() => setEditingIncome(false)} className="grid h-9 w-9 place-items-center rounded-lg text-[#768980] hover:bg-[#edf1e8]"><X size={16} /></motion.button>
                 </form> : <>
                   <div data-testid="text-monthly-allowance" className="font-display text-[43px] font-bold leading-none tracking-[-.06em] text-[#24483c] sm:text-[54px]">{fmtMoney(monthlyIncome)}</div>
-                  <button type="button" aria-label="Edit monthly income" data-testid="button-edit-income" onClick={() => { setIncomeDraft(String(monthlyIncome)); setEditingIncome(true); }} className="rounded-lg px-2 py-1 text-xs font-semibold text-[#628675] hover:bg-[#edf2e9]">Edit</button>
+                  <motion.button {...bounce} type="button" aria-label="Edit monthly income" data-testid="button-edit-income" onClick={() => { setIncomeDraft(String(monthlyIncome)); setEditingIncome(true); }} className="rounded-lg px-2 py-1 text-xs font-semibold text-[#628675] hover:bg-[#edf2e9]">Edit</motion.button>
                 </>}
                 <div className="text-sm text-[#819087]">per month</div>
               </div>
@@ -655,30 +657,30 @@ function Home() {
                   <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Date</span><input aria-label="Expense date" data-testid="input-expense-date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]" /></label>
                 </div>
                 {!customCategoryMode ? <div>
-                  <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Where it belongs</span><span className="relative block"><select aria-label="Expense category" data-testid="select-expense-category" value={category} onChange={(event) => setCategory(event.target.value)} required className="h-11 w-full appearance-none rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 pr-9 text-sm text-[#4d6c5e]">{categories.length === 0 ? <option value="" disabled>No categories available</option> : categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select><ChevronDown size={15} className="pointer-events-none absolute right-3 top-3.5 text-[#82958a]" /></span></label>
-                  <button type="button" data-testid="button-add-custom-category" onClick={() => { setCustomName(''); setCustomCategoryMode(true); }} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-[#347d68] hover:bg-[#edf2e9]"><Plus size={14} />Add a custom category</button>
+                  <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Where it belongs</span><span className="relative block"><motion.select {...bounce} aria-label="Expense category" data-testid="select-expense-category" value={category} onChange={(event) => setCategory(event.target.value)} required className="h-11 w-full  rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3  text-sm text-[#4d6c5e] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:border-[#347d68] focus:ring-2 focus:ring-[#347d68]/50 focus:ring-opacity-50">{categories.length === 0 ? <option value="" disabled>No categories available</option> : categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
+                  <motion.button {...bounce} type="button" data-testid="button-add-custom-category" onClick={() => { setCustomName(''); setCustomCategoryMode(true); }} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-[#347d68] hover:bg-[#edf2e9]"><Plus size={14} />Add a custom category</motion.button>
                 </div> : <div className="rounded-xl border border-[#dce5dc] bg-[#fffdf8]/50 p-3">
                   <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">New “Where it belongs” category</span><input aria-label="Custom category name" data-testid="input-custom-category" maxLength={40} required autoFocus value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="For example, Books or Gifts" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
-                  <div className="mt-2 flex items-center justify-between gap-2"><p className="text-[10px] text-[#87968c]">Saved when you add this expense.</p><button type="button" data-testid="button-use-existing-category" onClick={() => { setCustomCategoryMode(false); setCustomName(''); }} className="rounded-lg px-2 py-1 text-[11px] font-semibold text-[#628675] hover:bg-[#edf2e9]">Choose existing</button></div>
+                  <div className="mt-2 flex items-center justify-between gap-2"><p className="text-[10px] text-[#87968c]">Saved when you add this expense.</p><motion.button {...bounce} type="button" data-testid="button-use-existing-category" onClick={() => { setCustomCategoryMode(false); setCustomName(''); }} className="rounded-lg px-2 py-1 text-[11px] font-semibold text-[#628675] hover:bg-[#edf2e9]">Choose existing</motion.button></div>
                 </div>}
                 <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Tags <span className="font-normal">(optional, separate with commas or spaces)</span></span><input aria-label="Custom expense tags" data-testid="input-expense-tags" maxLength={240} value={tagInput} onChange={(event) => setTagInput(event.target.value)} placeholder="#iCloud, #CapCut, #Uber" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
                 <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">A note <span className="font-normal">(optional)</span></span><input aria-label="Optional note" data-testid="input-expense-note" maxLength={80} value={note} onChange={(event) => setNote(event.target.value)} placeholder="A quick detail to remember" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-sm text-[#4d6c5e] placeholder:text-[#a6b1a9]" /></label>
-                <button type="submit" data-testid="button-save-expense" className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-semibold text-white shadow-sm hover:bg-[#2d705d]">{editingId ? <Check size={16} /> : <Plus size={17} />}{editingId ? 'Save changes' : 'Add to my ledger'}</button>
+                <motion.button {...bounce} type="submit" data-testid="button-save-expense" className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-semibold text-white shadow-sm hover:bg-[#2d705d]">{editingId ? <Check size={16} /> : <Plus size={17} />}{editingId ? 'Save changes' : 'Add to my ledger'}</motion.button>
               </form>
             );
 
             if (editingId) {
               return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                <motion.div {...overlayFade} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                   <div className="absolute inset-0" onClick={clearForm}></div>
-                  <div className="relative glass-card max-w-lg w-full rounded-[28px] border border-white/80 p-6 sm:p-8 bg-white/95 max-h-[90vh] overflow-y-auto z-10 shadow-2xl">
+                  <motion.div {...modalPop} className="relative glass-card max-w-lg w-full rounded-[28px] border border-white/80 p-6 sm:p-8 bg-white/95 max-h-[90vh] overflow-y-auto z-10 shadow-2xl">
                     <div className="mb-5 flex items-start justify-between">
                       <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Make a change</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Edit expense</h2></div>
-                      <button type="button" aria-label="Cancel edit" data-testid="button-cancel-edit" onClick={clearForm} className="grid h-8 w-8 place-items-center rounded-full text-[#768980] hover:bg-[#edf1e8]"><X size={17} /></button>
+                      <motion.button {...bounce} type="button" aria-label="Cancel edit" data-testid="button-cancel-edit" onClick={clearForm} className="grid h-8 w-8 place-items-center rounded-full text-[#768980] hover:bg-[#edf1e8]"><X size={17} /></motion.button>
                     </div>
                     {formContent}
-                  </div>
-                </div>
+                  </motion.div>
+                </motion.div>
               );
             }
 
@@ -703,14 +705,14 @@ function Home() {
                 {pieData.map((item) => (
                   <div key={item.name} className="flex items-center justify-between gap-2 relative">
                     <div className="flex min-w-0 items-center gap-2">
-                      <button type="button" onClick={() => setColorPickerTarget(colorPickerTarget === `pie-${item.name}` ? null : `pie-${item.name}`)} aria-label={`Change color for ${item.name}`} className="h-3 w-3 shrink-0 rounded-full shadow-sm hover:scale-110 transition-transform" style={{ backgroundColor: colorForCategory(item.name, categories) }} />
+                      <motion.button {...bounce} type="button" onClick={() => setColorPickerTarget(colorPickerTarget === `pie-${item.name}` ? null : `pie-${item.name}`)} aria-label={`Change color for ${item.name}`} className="h-3 w-3 shrink-0 rounded-full shadow-sm hover:scale-110 transition-transform" style={{ backgroundColor: colorForCategory(item.name, categories) }} />
                       {colorPickerTarget === `pie-${item.name}` && (
                         <>
                           <div className="fixed inset-0 z-40" onClick={() => setColorPickerTarget(null)} />
                           <div className="absolute top-full left-0 mt-2 z-50 w-48 rounded-xl bg-white p-3 shadow-xl border border-[#dce5dc]">
                              <div className="flex flex-wrap gap-2 mb-3">
                                {PREDEFINED_COLORS.map(c => (
-                                 <button type="button" aria-label={`Select color ${c}`} key={c} onClick={() => { changeCategoryColor(item.name, c); setColorPickerTarget(null); }} className="h-6 w-6 rounded-full hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: c }} />
+                                 <motion.button {...bounce} type="button" aria-label={`Select color ${c}`} key={c} onClick={() => { changeCategoryColor(item.name, c); setColorPickerTarget(null); }} className="h-6 w-6 rounded-full hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: c }} />
                                ))}
                              </div>
                              <div className="border-t border-[#e6ebe3] pt-3 flex items-center justify-between">
@@ -775,8 +777,8 @@ function Home() {
                       <span className="h-3 w-3 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: colorForCategory(item.name, categories) }} />
                       <div className="truncate text-sm font-semibold text-[#416356]">{item.name}</div>
                       <div className="flex gap-1 opacity-60 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <button type="button" aria-label={`Edit ${item.name}`} onClick={() => { setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); setEditingCategoryColor(colorForCategory(item.name, categories)); setEditingCategoryBudget(item.budget.toString()); }} className="grid h-6 w-6 place-items-center rounded bg-[#edf2e9] text-[#789086] hover:text-[#347d68] hover:bg-[#e2eadc]"><Edit3 size={12} /></button>
-                        <button type="button" aria-label={`Delete ${item.name}`} onClick={() => setCategoryToDelete(item.name)} className="grid h-6 w-6 place-items-center rounded bg-[#fae9e4] text-[#a88e87] hover:text-[#ba5b4d] hover:bg-[#f3d9d3]"><Trash2 size={12} /></button>
+                        <motion.button {...bounce} type="button" aria-label={`Edit ${item.name}`} onClick={() => { setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); setEditingCategoryColor(colorForCategory(item.name, categories)); setEditingCategoryBudget(item.budget.toString()); }} className="grid h-6 w-6 place-items-center rounded bg-[#edf2e9] text-[#789086] hover:text-[#347d68] hover:bg-[#e2eadc]"><Edit3 size={12} /></motion.button>
+                        <motion.button {...bounce} type="button" aria-label={`Delete ${item.name}`} onClick={() => setCategoryToDelete(item.name)} className="grid h-6 w-6 place-items-center rounded bg-[#fae9e4] text-[#a88e87] hover:text-[#ba5b4d] hover:bg-[#f3d9d3]"><Trash2 size={12} /></motion.button>
                       </div>
                     </div>
                     <div className="mt-1 text-[11px] text-[#87968c]">{item.budget === 0 && item.spent === 0 ? 'No budget set' : item.budget === 0 ? `${fmtMoney(item.spent)} spent · no budget` : `${fmtMoney(item.spent)} spent`}</div>
@@ -791,22 +793,22 @@ function Home() {
         </section>
 
         <section className="glass-card rounded-[24px] p-5 sm:p-6">
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The little details</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Your ledger</h2></div><button type="button" onClick={exportCsv} data-testid="button-export-csv" className="flex h-9 items-center gap-2 rounded-xl border border-[#dce5dc] bg-[#fffdf8]/70 px-3 text-xs font-semibold text-[#537364] hover:bg-[#edf2e9]"><Download size={14} />Download CSV</button></div>
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The little details</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Your ledger</h2></div><motion.button {...bounce} type="button" onClick={exportCsv} data-testid="button-export-csv" className="flex h-9 items-center gap-2 rounded-xl border border-[#dce5dc] bg-[#fffdf8]/70 px-3 text-xs font-semibold text-[#537364] hover:bg-[#edf2e9]"><Download size={14} />Download CSV</motion.button></div>
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
-            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by category</span><select aria-label="Filter expenses by category" data-testid="select-filter-category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]"><option value="all">All categories</option>{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label>
-            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by tag</span><select aria-label="Filter expenses by tag" data-testid="select-filter-tag" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]"><option value="all">All tags</option>{availableTags.map((item) => <option key={item} value={item}>#{item}</option>)}</select></label>
+            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by category</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by category" data-testid="select-filter-category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:border-[#347d68] focus:ring-2 focus:ring-[#347d68]/50 focus:ring-opacity-50"><option value="all">All categories</option>{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
+            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by tag</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by tag" data-testid="select-filter-tag" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:border-[#347d68] focus:ring-2 focus:ring-[#347d68]/50 focus:ring-opacity-50"><option value="all">All tags</option>{availableTags.map((item) => <option key={item} value={item}>#{item}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
           </div>
           {monthExpenses.length ? filteredExpenses.length ? <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-left">
               <thead><tr className="border-b border-[#e6ebe3] text-[10px] font-semibold uppercase tracking-[.1em] text-[#95a198]"><th className="pb-3 pr-3 font-semibold">Date</th><th className="pb-3 pr-3 font-semibold">Category</th><th className="pb-3 pr-3 font-semibold">Tags</th><th className="pb-3 pr-3 font-semibold">Note</th><th className="pb-3 pr-3 text-right font-semibold">Amount</th><th className="pb-3 text-right font-semibold">Edit</th></tr></thead>
-              <tbody>{filteredExpenses.map((item) => <tr key={item.id} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] last:border-0 hover:bg-[#f7f7f0]/65">
+              <tbody><AnimatePresence initial={false}>{filteredExpenses.map((item) => <motion.tr key={item.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} transition={springTransition} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] last:border-0 hover:bg-[#f7f7f0]/65">
                 <td data-testid={`text-expense-date-${item.id}`} className="py-3.5 pr-3 text-xs text-[#74877d]">{new Date(`${item.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td>
                 <td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-[#4d6c5e]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td>
                 <td data-testid={`text-expense-tags-${item.id}`} className="py-3.5 pr-3"><div className="flex max-w-[170px] flex-wrap gap-1">{item.tags.map((tag) => <span key={tag} className="rounded-md bg-[#edf2e9] px-1.5 py-1 text-[10px] text-[#628675]">#{tag}</span>)}</div></td>
                 <td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td>
                 <td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td>
-                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><button type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></button><button type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => setExpenseToDelete(item.id)} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></button></div></td>
-              </tr>)}</tbody>
+                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><motion.button {...bounce} type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="grid h-8 w-8 place-items-center rounded-lg text-[#789086] opacity-75 hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></motion.button><motion.button {...bounce} type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => setExpenseToDelete(item.id)} className="grid h-8 w-8 place-items-center rounded-lg text-[#a88e87] opacity-75 hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></motion.button></div></td>
+              </motion.tr>)}</AnimatePresence></tbody>
             </table>
           </div> : <div className="rounded-2xl bg-[#f4f4ec]/65 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165]">No expenses match those filters</p><p className="mt-1 text-xs text-[#8a9990]">Try another category or tag.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
           <div className="mt-4 flex items-center justify-between border-t border-[#e6ebe3] pt-4 text-xs"><span className="text-[#839289]">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'} in {monthLabel(selectedMonth)}</span><span className="font-semibold text-[#426457]">Month total <strong data-testid="text-ledger-total" className="ml-2 font-display text-sm">{fmtMoney(spent)}</strong></span></div>
@@ -856,13 +858,13 @@ function Home() {
         <footer className="flex items-center justify-center gap-2 py-7 text-[11px] text-[#93a097]"><span>Just for you</span><span className="h-1 w-1 rounded-full bg-[#d78967]" /><span>Your numbers never leave this device</span></footer>
       </div>
       
-      {editingCategoryTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <AnimatePresence>{editingCategoryTarget && (
+        <motion.div {...overlayFade} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="absolute inset-0" onClick={() => setEditingCategoryTarget(null)}></div>
-          <form onSubmit={(e) => { e.preventDefault(); saveCategoryEdit(); }} className="relative glass-card max-w-md w-full rounded-[28px] border border-white/80 p-6 sm:p-8 bg-white/95 max-h-[90vh] overflow-y-auto z-10 shadow-2xl">
+          <motion.form {...modalPop} onSubmit={(e) => { e.preventDefault(); saveCategoryEdit(); }} className="relative glass-card max-w-md w-full rounded-[28px] border border-white/80 p-6 sm:p-8 bg-white/95 max-h-[90vh] overflow-y-auto z-10 shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
               <h3 className="font-display text-xl font-bold text-[#294d40]">Edit category</h3>
-              <button type="button" aria-label="Close" onClick={() => setEditingCategoryTarget(null)} className="grid h-8 w-8 place-items-center rounded-full bg-[#f4f5ef] text-[#627a6d] hover:bg-[#e8ebe3]"><X size={16} /></button>
+              <motion.button {...bounce} type="button" aria-label="Close" onClick={() => setEditingCategoryTarget(null)} className="grid h-8 w-8 place-items-center rounded-full bg-[#f4f5ef] text-[#627a6d] hover:bg-[#e8ebe3]"><X size={16} /></motion.button>
             </div>
             <label className="mb-4 block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Name</span>
               <input autoFocus aria-label="Category name" value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3 text-sm text-[#416356] outline-none focus:ring-2 focus:ring-[#347d68]" />
@@ -873,52 +875,52 @@ function Home() {
             <div className="mb-6"><span className="mb-2 block text-[11px] font-semibold text-[#819087]">Color</span>
               <div className="flex flex-wrap items-center gap-2">
                 {PREDEFINED_COLORS.map((c) => (
-                  <button type="button" aria-label={`Select color ${c}`} key={c} onClick={() => setEditingCategoryColor(c)} className={`h-7 w-7 rounded-full shadow-sm transition-transform hover:scale-110 ${editingCategoryColor.toLowerCase() === c.toLowerCase() ? 'ring-2 ring-offset-2 ring-[#347d68]' : ''}`} style={{ backgroundColor: c }} />
+                  <motion.button {...bounce} type="button" aria-label={`Select color ${c}`} key={c} onClick={() => setEditingCategoryColor(c)} className={`h-7 w-7 rounded-full shadow-sm transition-transform hover:scale-110 ${editingCategoryColor.toLowerCase() === c.toLowerCase() ? 'ring-2 ring-offset-2 ring-[#347d68]' : ''}`} style={{ backgroundColor: c }} />
                 ))}
                 <input type="color" aria-label="Custom color" value={editingCategoryColor} onChange={(e) => setEditingCategoryColor(e.target.value)} className="h-7 w-7 cursor-pointer border-0 p-0 rounded bg-transparent" />
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button type="button" onClick={() => setEditingCategoryTarget(null)} className="flex-1 rounded-xl bg-[#f4f5ef] py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</button>
-              <button type="submit" className="flex-1 rounded-xl bg-[#347d68] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#2b6857] transition">Save changes</button>
+              <motion.button {...bounce} type="button" onClick={() => setEditingCategoryTarget(null)} className="flex-1 rounded-xl bg-[#f4f5ef] py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</motion.button>
+              <motion.button {...bounce} type="submit" className="flex-1 rounded-xl bg-[#347d68] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#2b6857] transition">Save changes</motion.button>
             </div>
-          </form>
-        </div>
-      )}
+          </motion.form>
+        </motion.div>
+      )}</AnimatePresence>
 
-      {categoryToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <AnimatePresence>{categoryToDelete && (
+        <motion.div {...overlayFade} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="absolute inset-0" onClick={() => setCategoryToDelete(null)}></div>
-          <div className="relative glass-card max-w-sm w-full rounded-[24px] border border-white/80 p-6 text-center bg-white/95 z-10 shadow-2xl">
+          <motion.div {...modalPop} className="relative glass-card max-w-sm w-full rounded-[24px] border border-white/80 p-6 text-center bg-white/95 z-10 shadow-2xl">
             <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[#fae9e4] text-[#b8584b]">
               <Trash2 size={24} />
             </div>
             <h3 className="font-display text-lg font-bold text-[#294d40] mb-2">Delete Category?</h3>
             <p className="text-sm text-[#627a6d] mb-6">Are you sure you want to delete the "{categoryToDelete}" category? Expenses in this category will be marked as "Uncategorized".</p>
             <div className="flex items-center gap-3">
-              <button type="button" onClick={() => setCategoryToDelete(null)} className="flex-1 rounded-xl bg-[#f4f5ef] py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</button>
-              <button type="button" onClick={() => { deleteCategory(categoryToDelete); setCategoryToDelete(null); }} className="flex-1 rounded-xl bg-[#b8584b] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a04b40] transition">Confirm</button>
+              <motion.button {...bounce} type="button" onClick={() => setCategoryToDelete(null)} className="flex-1 rounded-xl bg-[#f4f5ef] py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</motion.button>
+              <motion.button {...bounce} type="button" onClick={() => { deleteCategory(categoryToDelete); setCategoryToDelete(null); }} className="flex-1 rounded-xl bg-[#b8584b] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a04b40] transition">Confirm</motion.button>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        </motion.div>
+      )}</AnimatePresence>
 
-      {expenseToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <AnimatePresence>{expenseToDelete && (
+        <motion.div {...overlayFade} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="absolute inset-0" onClick={() => setExpenseToDelete(null)}></div>
-          <div className="relative glass-card max-w-sm w-full rounded-[24px] border border-white/80 p-6 text-center bg-white/95 z-10 shadow-2xl">
+          <motion.div {...modalPop} className="relative glass-card max-w-sm w-full rounded-[24px] border border-white/80 p-6 text-center bg-white/95 z-10 shadow-2xl">
             <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[#fae9e4] text-[#b8584b]">
               <Trash2 size={24} />
             </div>
             <h3 className="font-display text-lg font-bold text-[#294d40] mb-2">Delete Expense?</h3>
             <p className="text-sm text-[#627a6d] mb-6">Are you sure you want to delete this expense from your ledger? This action cannot be undone.</p>
             <div className="flex items-center gap-3">
-              <button type="button" onClick={() => setExpenseToDelete(null)} className="flex-1 rounded-xl bg-[#f4f5ef] py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</button>
-              <button type="button" onClick={() => { void deleteExpense(expenseToDelete); setExpenseToDelete(null); }} className="flex-1 rounded-xl bg-[#b8584b] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a04b40] transition">Confirm</button>
+              <motion.button {...bounce} type="button" onClick={() => setExpenseToDelete(null)} className="flex-1 rounded-xl bg-[#f4f5ef] py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</motion.button>
+              <motion.button {...bounce} type="button" onClick={() => { void deleteExpense(expenseToDelete); setExpenseToDelete(null); }} className="flex-1 rounded-xl bg-[#b8584b] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a04b40] transition">Confirm</motion.button>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        </motion.div>
+      )}</AnimatePresence>
     </main>
   );
 }
