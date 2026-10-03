@@ -256,7 +256,11 @@ function Home() {
 
   useEffect(() => {
     if (editingId || expenseToDelete || editingCategoryTarget || categoryToDelete) {
+      const prevOverflow = document.body.style.overflow;
+      const prevPaddingRight = document.body.style.paddingRight;
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
+      if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
           if (editingId) clearForm();
@@ -267,10 +271,12 @@ function Home() {
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => {
-        document.body.style.overflow = '';
+        document.body.style.overflow = prevOverflow;
+        document.body.style.paddingRight = prevPaddingRight;
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
+    return undefined;
   }, [editingId, expenseToDelete, editingCategoryTarget, categoryToDelete]);
 
   const monthExpenses = useMemo(
@@ -669,10 +675,10 @@ function Home() {
               </form>
             );
 
-            if (editingId) {
-              return (
-                <motion.div {...overlayFade} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                  <div className="absolute inset-0" onClick={clearForm}></div>
+            const editModal = (
+              <AnimatePresence>{editingId && (
+                <div key="modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                  <motion.div {...overlayFade} className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={clearForm}></motion.div>
                   <motion.div {...modalPop} className="relative glass-card max-w-lg w-full rounded-[28px] border border-white/80 p-6 sm:p-8 bg-white/95 max-h-[90vh] overflow-y-auto z-10 shadow-2xl">
                     <div className="mb-5 flex items-start justify-between">
                       <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Make a change</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Edit expense</h2></div>
@@ -680,17 +686,20 @@ function Home() {
                     </div>
                     {formContent}
                   </motion.div>
-                </motion.div>
-              );
-            }
+                </div>
+              )}</AnimatePresence>
+            );
 
             return (
-              <section id="expense-entry" className="glass-card rounded-[24px] p-5 sm:p-6">
+              <>
+              {!editingId && <section id="expense-entry" className="glass-card rounded-[24px] p-5 sm:p-6">
                 <div className="mb-5 flex items-start justify-between">
                   <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">A small note to self</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">What did you spend?</h2></div>
                 </div>
                 {formContent}
-              </section>
+              </section>}
+              {editModal}
+              </>
             );
           })()}
 
@@ -859,8 +868,8 @@ function Home() {
       </div>
       
       <AnimatePresence>{editingCategoryTarget && (
-        <motion.div {...overlayFade} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="absolute inset-0" onClick={() => setEditingCategoryTarget(null)}></div>
+        <div key="modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div {...overlayFade} className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setEditingCategoryTarget(null)}></motion.div>
           <motion.form {...modalPop} onSubmit={(e) => { e.preventDefault(); saveCategoryEdit(); }} className="relative glass-card max-w-md w-full rounded-[28px] border border-white/80 p-6 sm:p-8 bg-white/95 max-h-[90vh] overflow-y-auto z-10 shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
               <h3 className="font-display text-xl font-bold text-[#294d40]">Edit category</h3>
@@ -885,12 +894,12 @@ function Home() {
               <motion.button {...bounce} type="submit" className="flex-1 rounded-xl bg-[#347d68] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#2b6857] transition">Save changes</motion.button>
             </div>
           </motion.form>
-        </motion.div>
+        </div>
       )}</AnimatePresence>
 
       <AnimatePresence>{categoryToDelete && (
-        <motion.div {...overlayFade} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="absolute inset-0" onClick={() => setCategoryToDelete(null)}></div>
+        <div key="modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div {...overlayFade} className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setCategoryToDelete(null)}></motion.div>
           <motion.div {...modalPop} className="relative glass-card max-w-sm w-full rounded-[24px] border border-white/80 p-6 text-center bg-white/95 z-10 shadow-2xl">
             <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[#fae9e4] text-[#b8584b]">
               <Trash2 size={24} />
@@ -902,12 +911,12 @@ function Home() {
               <motion.button {...bounce} type="button" onClick={() => { deleteCategory(categoryToDelete); setCategoryToDelete(null); }} className="flex-1 rounded-xl bg-[#b8584b] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a04b40] transition">Confirm</motion.button>
             </div>
           </motion.div>
-        </motion.div>
+        </div>
       )}</AnimatePresence>
 
       <AnimatePresence>{expenseToDelete && (
-        <motion.div {...overlayFade} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="absolute inset-0" onClick={() => setExpenseToDelete(null)}></div>
+        <div key="modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div {...overlayFade} className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setExpenseToDelete(null)}></motion.div>
           <motion.div {...modalPop} className="relative glass-card max-w-sm w-full rounded-[24px] border border-white/80 p-6 text-center bg-white/95 z-10 shadow-2xl">
             <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[#fae9e4] text-[#b8584b]">
               <Trash2 size={24} />
@@ -919,7 +928,7 @@ function Home() {
               <motion.button {...bounce} type="button" onClick={() => { void deleteExpense(expenseToDelete); setExpenseToDelete(null); }} className="flex-1 rounded-xl bg-[#b8584b] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a04b40] transition">Confirm</motion.button>
             </div>
           </motion.div>
-        </motion.div>
+        </div>
       )}</AnimatePresence>
     </main>
   );

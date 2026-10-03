@@ -629,7 +629,8 @@ export function useExpenses({ ledgerId, isGuest }: { ledgerId: string | null; is
         localStorage.removeItem(SYNC_QUEUE_KEY);
         for (const item of queue) {
           if (item.type === 'insert') {
-             await supabase.from('expenses').insert(item.payload).catch(console.error);
+             const { error } = await supabase.from('expenses').insert(item.payload);
+             if (error) console.error(error);
           }
         }
       }

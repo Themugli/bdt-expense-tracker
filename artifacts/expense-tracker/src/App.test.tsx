@@ -4,7 +4,7 @@ import * as auth from './auth';
 import { vi, describe, it, expect } from 'vitest';
 
 vi.mock('./auth', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof import('./auth')>();
   return { ...actual, getActiveSession: vi.fn() };
 });
 
@@ -25,7 +25,7 @@ vi.mock('@/lib/supabase', () => ({
 describe('App State Isolation', () => {
   it('clears form state when user logs out', async () => {
     // 1. Mock an authenticated session
-    vi.mocked(auth.getActiveSession).mockReturnValue({ user: { id: 'test-1', email: 'test@test.com', provider: 'google', name: 'Test User', avatarUrl: '' }, isGuest: false });
+    vi.mocked(auth.getActiveSession).mockReturnValue({ user: { id: 'test-1', email: 'test@test.com', name: 'Test User' }, isGuest: false });
     const { rerender } = render(<App />);
 
     // 2. Simulate typing into the form

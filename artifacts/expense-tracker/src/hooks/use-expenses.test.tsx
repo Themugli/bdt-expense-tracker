@@ -38,7 +38,7 @@ describe('useExpenses', () => {
     // 2. Add Expense Optimistically
     const newExpense = { id: '123', amount: 500, category: 'Food', date: '2026-10-03', note: '', tags: [] };
     
-    let promise;
+    let promise: Promise<unknown> | undefined;
     act(() => {
       promise = result.current.addExpense(newExpense);
     });
