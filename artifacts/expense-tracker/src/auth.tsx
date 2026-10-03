@@ -16,16 +16,7 @@ export interface User {
 export const USERS_STORAGE_KEY = 'little-ledger-users-v2';
 export const SESSION_STORAGE_KEY = 'little-ledger-session-v2';
 
-export const DEFAULT_USERS: User[] = [
-  {
-    id: 'usr_nafin',
-    name: 'Nafin Ahmed',
-    email: 'demo@ledger.bd',
-    password: 'demo123',
-    twoFactorEnabled: false,
-    twoFactorSecret: 'BD-EXPENSE-2FA-9842',
-  },
-];
+export const DEFAULT_USERS: User[] = [];
 
 export function getStoredUsers(): User[] {
   try {
@@ -66,8 +57,8 @@ interface AuthLandingProps {
 
 export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [loginEmail, setLoginEmail] = useState('demo@ledger.bd');
-  const [loginPassword, setLoginPassword] = useState('demo123');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
 
   const [signupName, setSignupName] = useState('');
@@ -122,13 +113,6 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
     saveStoredUsers(nextUsers);
     if (rememberMe) saveActiveSession({ user: newUser, isGuest: false });
     onLoginSuccess(newUser, false);
-  }
-
-  function handleDemoLogin() {
-    const users = getStoredUsers();
-    let demo = users.find((u) => u.email === 'demo@ledger.bd') || DEFAULT_USERS[0];
-    saveActiveSession({ user: demo, isGuest: false });
-    onLoginSuccess(demo, false);
   }
 
   function handleGuestMode() {
@@ -252,7 +236,7 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
                       required
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="demo@ledger.bd or nafin"
+                      placeholder="you@example.com"
                       className="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none placeholder:text-[#b4c0b7]"
                     />
                   </div>
@@ -366,20 +350,13 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={handleDemoLogin}
-                className="h-10 flex items-center justify-center gap-2 rounded-xl border border-[#cbdace] bg-white px-3 text-xs font-semibold text-[#315548] hover:bg-[#edf2e9] transition"
-              >
-                <Sparkles size={14} className="text-[#d78967]" /> Demo Login
-              </button>
+            <div className="grid grid-cols-1 gap-3">
               <button
                 type="button"
                 onClick={handleGuestMode}
                 className="h-10 flex items-center justify-center gap-2 rounded-xl border border-[#dce5dc] bg-white/70 px-3 text-xs font-semibold text-[#627a6d] hover:bg-white transition"
               >
-                <UserCheck size={14} /> Guest Mode
+                <UserCheck size={14} /> Continue as Guest
               </button>
             </div>
           </div>
