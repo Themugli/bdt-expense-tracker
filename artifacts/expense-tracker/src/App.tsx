@@ -817,7 +817,7 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         const user: User = {
-          id: session.user.id,
+          id: session.user.user_metadata?.ledger_id || session.user.id,
           name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
           email: session.user.email || '',
           twoFactorEnabled: false,

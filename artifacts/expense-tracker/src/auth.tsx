@@ -86,8 +86,15 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
     }
 
     if (data.user) {
+      let resolvedId = data.user.user_metadata?.ledger_id;
+      if (!resolvedId) {
+        const localMatch = getStoredUsers().find(u => u.email.toLowerCase() === (data.user.email || '').toLowerCase());
+        resolvedId = localMatch ? localMatch.id : data.user.id;
+        void supabase.auth.updateUser({ data: { ledger_id: resolvedId } });
+      }
+
       const user: User = {
-        id: data.user.id,
+        id: resolvedId,
         name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
         email: data.user.email || loginEmail.trim(),
         twoFactorEnabled: false,
@@ -102,11 +109,14 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
     e.preventDefault();
     setErrorMsg('');
     
+    const localMatch = getStoredUsers().find(u => u.email.toLowerCase() === signupEmail.trim().toLowerCase());
+    const initialId = localMatch ? localMatch.id : `usr_${Date.now()}`;
+
     const { data, error } = await supabase.auth.signUp({
       email: signupEmail.trim(),
       password: signupPassword,
       options: {
-        data: { name: signupName.trim() }
+        data: { name: signupName.trim(), ledger_id: initialId }
       }
     });
 
@@ -117,7 +127,7 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
 
     if (data.user) {
       const user: User = {
-        id: data.user.id,
+        id: data.user.user_metadata?.ledger_id || initialId,
         name: signupName.trim(),
         email: data.user.email || signupEmail.trim(),
         twoFactorEnabled: false,
