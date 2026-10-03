@@ -85,8 +85,9 @@ function loadExpenses(userId?: string) {
     tags: Array.isArray(item.tags) ? item.tags : [],
   }));
 }
-function loadCategories() {
-  const saved = readStored<Category[]>(CATEGORIES_KEY, initialCategories);
+function loadCategories(userId?: string) {
+  const key = userId ? `little-ledger-categories-usr-${userId}` : CATEGORIES_KEY;
+  const saved = readStored<Category[]>(key, initialCategories);
   const normalized = new Map<string, Category>();
   const ordered = [...saved].sort((a, b) => Number(categoryAliases[a.name] !== undefined) - Number(categoryAliases[b.name] !== undefined));
   for (const item of ordered) {
@@ -133,7 +134,7 @@ function Home() {
 
   const today = localDate();
   const [expenses, setExpenses] = useState<Expense[]>(() => loadExpenses(currentUser?.id));
-  const [categories, setCategories] = useState<Category[]>(loadCategories);
+  const [categories, setCategories] = useState<Category[]>(() => loadCategories(currentUser?.id));
   const [monthlyIncome, setMonthlyIncome] = useState(() => {
     const key = currentUser ? `little-ledger-income-usr-${currentUser.id}` : INCOME_KEY;
     const saved = readStored(key, DEFAULT_MONTHLY_INCOME);
@@ -171,7 +172,10 @@ function Home() {
     localStorage.setItem(key, JSON.stringify(expenses));
   }, [expenses, currentUser?.id]);
 
-  useEffect(() => { localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories)); }, [categories]);
+  useEffect(() => {
+    const key = currentUser ? `little-ledger-categories-usr-${currentUser.id}` : CATEGORIES_KEY;
+    localStorage.setItem(key, JSON.stringify(categories));
+  }, [categories, currentUser?.id]);
 
   useEffect(() => {
     const key = currentUser ? `little-ledger-income-usr-${currentUser.id}` : INCOME_KEY;
