@@ -331,15 +331,27 @@ function Home() {
       setEditingCategoryTarget(null);
       return;
     }
-    if (categories.some((c) => c.name.toLowerCase() === trimmed.toLowerCase())) {
-      alert("A category with this name already exists!");
-      return;
+    
+    const existingCategory = categories.find((c) => c.name.toLowerCase() === trimmed.toLowerCase());
+    
+    if (existingCategory && existingCategory.name !== oldName) {
+      setExpenses((current) => current.map((e) => e.category === oldName ? { ...e, category: existingCategory.name } : e));
+      setCategories((current) => {
+        const oldBudget = current.find((c) => c.name === oldName)?.budget || 0;
+        return current
+          .filter((c) => c.name !== oldName)
+          .map((c) => c.name === existingCategory.name ? { ...c, budget: c.budget + oldBudget } : c);
+      });
+      if (category === oldName) setCategory(existingCategory.name);
+      if (categoryFilter === oldName) setCategoryFilter(existingCategory.name);
+    } else {
+      setCategories((current) => current.map((c) => c.name === oldName ? { ...c, name: trimmed } : c));
+      setExpenses((current) => current.map((e) => e.category === oldName ? { ...e, category: trimmed } : e));
+      if (category === oldName) setCategory(trimmed);
+      if (categoryFilter === oldName) setCategoryFilter(trimmed);
     }
-    setCategories((current) => current.map((c) => c.name === oldName ? { ...c, name: trimmed } : c));
-    setExpenses((current) => current.map((e) => e.category === oldName ? { ...e, category: trimmed } : e));
+    
     setEditingCategoryTarget(null);
-    if (category === oldName) setCategory(trimmed);
-    if (categoryFilter === oldName) setCategoryFilter(trimmed);
   }
 
   function deleteCategory(name: string) {
