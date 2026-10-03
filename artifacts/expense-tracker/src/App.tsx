@@ -492,16 +492,6 @@ function Home() {
         </nav>
 
         {activeTab === 'monthly' ? <>
-        <nav aria-label="Monthly history" data-testid="monthly-history-tabs" className="mb-5 flex gap-2 overflow-x-auto pb-1">
-          {monthTabs.length ? monthTabs.map((month) => <button key={month} type="button" aria-pressed={selectedMonth === month} data-testid={`tab-month-${month}`} onClick={() => {
-            setSelectedMonth(month);
-            setSelectedYear(Number(month.slice(0, 4)));
-            setCategoryFilter('all');
-            setTagFilter('all');
-          }} className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition ${selectedMonth === month ? 'border-[#347d68] bg-[#347d68] text-white shadow-sm' : 'border-[#dce5dc] bg-[#fbfaf5]/75 text-[#62796d] hover:bg-[#edf2e9]'}`}>
-            <span>{monthLabel(month)}</span><span className={`rounded-full px-1.5 py-0.5 text-[10px] ${selectedMonth === month ? 'bg-white/20 text-white' : 'bg-[#e9eee6] text-[#6f8678]'}`}>{monthEntryCounts.get(month)}</span>
-          </button>) : <p className="px-1 py-2 text-xs text-[#87968c]">Your month tabs will appear here once you add an expense.</p>}
-        </nav>
 
         <section className="rise-in-delay glass-card relative mb-5 overflow-hidden rounded-[26px] p-5 sm:p-7">
           <div className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rounded-full border-[1px] border-[#dbe7d8]/80" />
