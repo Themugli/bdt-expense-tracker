@@ -33,18 +33,18 @@ const queryClient = new QueryClient();
 
 type Expense = { id: string; date: string; amount: number; category: string; note: string; tags: string[] };
 type Category = { name: string; budget: number };
-const DEFAULT_MONTHLY_INCOME = 7000;
+const DEFAULT_MONTHLY_INCOME = 0;
 const EXPENSES_KEY = 'little-ledger-expenses-v1';
 const CATEGORIES_KEY = 'little-ledger-categories-v1';
 const INCOME_KEY = 'little-ledger-income-v1';
 const initialCategories: Category[] = [
-  { name: 'Transportation', budget: 4000 },
-  { name: 'Subscriptions', budget: 1000 },
-  { name: 'Fitness / Protein', budget: 1000 },
+  { name: 'Transportation', budget: 0 },
+  { name: 'Subscriptions', budget: 0 },
+  { name: 'Fitness / Protein', budget: 0 },
   { name: 'Food', budget: 0 },
   { name: 'Shopping', budget: 0 },
   { name: 'Bills', budget: 0 },
-  { name: 'Miscellaneous', budget: 1000 },
+  { name: 'Miscellaneous', budget: 0 },
 ];
 const categoryColors = ['#347d68', '#df8b68', '#d4ad48', '#6f9aaf', '#a088aa', '#8b9c75', '#cc7669'];
 const categoryAliases: Record<string, string> = {
@@ -75,12 +75,7 @@ function readStored<T>(key: string, fallback: T): T {
 function normalizeCategoryName(name: string) {
   return categoryAliases[name] ?? name;
 }
-const DEFAULT_SAMPLE_EXPENSES: Expense[] = [
-  { id: '1', date: '2026-10-01', amount: 350, category: 'Transportation', note: 'Uber to Dhanmondi', tags: ['Uber'] },
-  { id: '2', date: '2026-10-01', amount: 620, category: 'Food', note: 'Lunch at Madchef', tags: ['Madchef', 'Burger'] },
-  { id: '3', date: '2026-10-02', amount: 1200, category: 'Subscriptions', note: 'iCloud + CapCut Pro', tags: ['iCloud', 'CapCut'] },
-  { id: '4', date: '2026-10-03', amount: 2080, category: 'Fitness / Protein', note: 'Optimum Nutrition Protein', tags: ['WheyProtein', 'Gym'] },
-];
+const DEFAULT_SAMPLE_EXPENSES: Expense[] = [];
 
 function loadExpenses(userId?: string) {
   const key = userId ? `little-ledger-expenses-usr-${userId}` : EXPENSES_KEY;
