@@ -236,7 +236,6 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
                       required
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="you@example.com"
                       className="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none placeholder:text-[#b4c0b7]"
                     />
                   </div>
@@ -251,7 +250,6 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
                       required
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder="••••••••"
                       className="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none placeholder:text-[#b4c0b7]"
                     />
                     <button
@@ -293,7 +291,6 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
                     required
                     value={signupName}
                     onChange={(e) => setSignupName(e.target.value)}
-                    placeholder="Nafin Ahmed"
                     className="h-10 w-full rounded-xl border border-[#dce5dc] bg-white px-3 text-sm font-medium text-[#24483c] outline-none"
                   />
                 </div>
@@ -305,7 +302,6 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
                     required
                     value={signupEmail}
                     onChange={(e) => setSignupEmail(e.target.value)}
-                    placeholder="nafin@example.com"
                     className="h-10 w-full rounded-xl border border-[#dce5dc] bg-white px-3 text-sm font-medium text-[#24483c] outline-none"
                   />
                 </div>
@@ -319,7 +315,6 @@ export function AuthLanding({ onLoginSuccess }: AuthLandingProps) {
                       minLength={4}
                       value={signupPassword}
                       onChange={(e) => setSignupPassword(e.target.value)}
-                      placeholder="At least 4 characters"
                       className="w-full bg-transparent text-sm font-medium text-[#24483c] outline-none placeholder:text-[#b4c0b7]"
                     />
                     <button
