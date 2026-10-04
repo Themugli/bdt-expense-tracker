@@ -88,7 +88,8 @@
     "@clerk/themes": "^2.4.57",
     "@supabase/supabase-js": "^2.39.0",
     "@types/qrcode.react": "^1.0.5",
-    "qrcode.react": "^3.1.0"
+    "qrcode.react": "^3.1.0",
+    "react-router-dom": "^7.18.4"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
