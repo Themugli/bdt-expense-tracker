@@ -147,10 +147,9 @@ function LoanModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () =
 
 export default function LoanTracker() {
   const session = getActiveSession();
-  const currentUser = session ? session.user : null;
   const isGuest = session ? session.isGuest : true;
   
-  const { loans, isLoading, addLoan, updateLoan } = useLoans({ ledgerId: currentUser?.id ?? null, isGuest });
+  const { loans, isLoading, addLoan, updateLoan } = useLoans();
 
   const [activeTab, setActiveTab] = useState<'payable' | 'receivable'>('payable');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -208,23 +207,30 @@ export default function LoanTracker() {
           />
         </div>
 
-        <div className="mb-8">
-          <p className="text-sm font-semibold text-[#768980] uppercase tracking-wider mb-1">
-            Total {activeTab === 'payable' ? 'Payables' : 'Receivables'} (Pending)
-          </p>
-          <div className="text-[48px] font-bold tracking-tight text-[#24483c] leading-none">
-            ${totalAmount.toFixed(2)}
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 size={32} className="animate-spin text-[#347d68]" />
+        {isGuest ? (
+          <div className="text-center py-20 bg-white rounded-[24px] shadow-sm border border-[#e6ebe3]">
+            <h2 className="text-xl font-bold text-[#24483c] mb-2">Sign in Required</h2>
+            <p className="text-[#768980]">Please log in to manage your loans and debts.</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            <AnimatePresence mode="popLayout">
-              {filteredLoans.map((loan) => (
+          <>
+            <div className="mb-8">
+              <p className="text-sm font-semibold text-[#768980] uppercase tracking-wider mb-1">
+                Total {activeTab === 'payable' ? 'Payables' : 'Receivables'} (Pending)
+              </p>
+              <div className="text-[48px] font-bold tracking-tight text-[#24483c] leading-none">
+                ${totalAmount.toFixed(2)}
+              </div>
+            </div>
+
+            {isLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 size={32} className="animate-spin text-[#347d68]" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <AnimatePresence mode="popLayout">
+                  {filteredLoans.map((loan) => (
                 <motion.div
                   key={loan.id}
                   layout
@@ -279,6 +285,8 @@ export default function LoanTracker() {
               )}
             </AnimatePresence>
           </div>
+            )}
+          </>
         )}
       </div>
 
