@@ -7,6 +7,8 @@ import { getActiveSession, saveActiveSession } from '@/lib/auth';
 import type { User } from '@/types';
 import LandingPage from '@/pages/LandingPage';
 import DailyLedger from '@/pages/DailyLedger';
+import MonthlyOverview from '@/pages/MonthlyOverview';
+import YearlyOverview from '@/pages/YearlyOverview';
 import { Sidebar } from '@/components/ui/sidebar';
 import NotFound from '@/pages/not-found';
 
@@ -49,8 +51,8 @@ export default function App() {
               <Sidebar />
               <Routes>
                 <Route path="/daily" element={<DailyLedger />} />
-                <Route path="/monthly" element={<div className="p-10 text-center">Monthly Overview Placeholder</div>} />
-                <Route path="/yearly" element={<div className="p-10 text-center">Yearly Overview Placeholder</div>} />
+                <Route path="/monthly" element={<MonthlyOverview />} />
+                <Route path="/yearly" element={<YearlyOverview />} />
                 <Route path="/loans" element={<div className="p-10 text-center">Loan Tracker Placeholder</div>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
