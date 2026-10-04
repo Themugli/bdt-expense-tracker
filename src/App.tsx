@@ -9,6 +9,7 @@ import LandingPage from '@/pages/LandingPage';
 import DailyLedger from '@/pages/DailyLedger';
 import MonthlyOverview from '@/pages/MonthlyOverview';
 import YearlyOverview from '@/pages/YearlyOverview';
+import LoanTracker from '@/pages/LoanTracker';
 import { Sidebar } from '@/components/ui/sidebar';
 import NotFound from '@/pages/not-found';
 
@@ -53,7 +54,7 @@ export default function App() {
                 <Route path="/daily" element={<DailyLedger />} />
                 <Route path="/monthly" element={<MonthlyOverview />} />
                 <Route path="/yearly" element={<YearlyOverview />} />
-                <Route path="/loans" element={<div className="p-10 text-center">Loan Tracker Placeholder</div>} />
+                <Route path="/loans" element={<LoanTracker />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </>

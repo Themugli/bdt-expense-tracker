@@ -13,3 +13,13 @@ export interface User {
   email: string;
   password?: string;
 }
+
+export interface Loan {
+  id: string;
+  type: 'payable' | 'receivable';
+  amount: number;
+  person_name: string;
+  due_date: string | null;
+  notes: string;
+  status: 'pending' | 'settled';
+}
