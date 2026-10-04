@@ -1,10 +1,10 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
-import * as auth from './auth';
+import * as auth from '@/lib/auth';
 import { vi, describe, it, expect } from 'vitest';
 
-vi.mock('./auth', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./auth')>();
+vi.mock('@/lib/auth', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/auth')>();
   return { ...actual, getActiveSession: vi.fn() };
 });
 
@@ -26,7 +26,7 @@ describe('App State Isolation', () => {
   it('clears form state when user logs out', async () => {
     // 1. Mock an authenticated session
     vi.mocked(auth.getActiveSession).mockReturnValue({ user: { id: 'test-1', email: 'test@test.com', name: 'Test User' }, isGuest: false });
-    const { rerender } = render(<App />);
+    render(<App />);
 
     // 2. Simulate typing into the form
     const amountInput = await screen.findByTestId('input-expense-amount');

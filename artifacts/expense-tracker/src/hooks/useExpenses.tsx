@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PostgrestError, RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/useToast';
 import { ToastAction } from '@/components/ui/toast';
 
 /* ──────────────────────────────────────────────────────────────────────────
    Types & helpers
    ────────────────────────────────────────────────────────────────────────── */
 
-export type Expense = { id: string; date: string; amount: number; category: string; note: string; tags: string[] };
+import type { Expense } from '@/types';
 
 /**
  * idle       – no profile selected

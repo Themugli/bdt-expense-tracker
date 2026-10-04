@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { bounce } from '@/lib/motion';
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
+import type { Session, AuthChangeEvent } from '@supabase/supabase-js';
 
 // Eye icons inline to avoid extra dependencies
 function EyeIcon() {
@@ -82,13 +83,13 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       if (session && mode !== 'reset') {
         onAuthenticated();
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (event === 'PASSWORD_RECOVERY') {
         setMode('reset');
         return;
@@ -180,7 +181,7 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
     setLoading(false);
   };
 
-  const handleSignOut = async () => { await supabase.auth.signOut(); };
+
 
 
 

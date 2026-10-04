@@ -1,61 +1,17 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { bounce } from '@/lib/motion';
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import {
-  ArrowRight, Check, Copy, HardDriveDownload, KeyRound, Lock, LockKeyhole,
-  LogOut, Mail, PlusCircle, ShieldAlert, ShieldCheck, Sparkles, UserCheck, Wallet, X, Eye, EyeOff
+  ArrowRight, Check, Eye, EyeOff, Lock, Mail, UserCheck, Wallet, X
 } from 'lucide-react';
-import { supabase } from './lib/supabase';
+import { supabase } from '@/lib/supabase';
+import type { User } from '@/types';
+import { getStoredUsers, saveActiveSession } from '@/lib/auth';
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  password?: string;
-}
-
-export const USERS_STORAGE_KEY = 'little-ledger-users-v2';
-export const SESSION_STORAGE_KEY = 'little-ledger-session-v2';
-
-export const DEFAULT_USERS: User[] = [];
-
-export function getStoredUsers(): User[] {
-  try {
-    const data = localStorage.getItem(USERS_STORAGE_KEY);
-    return data ? JSON.parse(data) : DEFAULT_USERS;
-  } catch {
-    return DEFAULT_USERS;
-  }
-}
-
-export function saveStoredUsers(users: User[]) {
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-}
-
-export function getActiveSession(): { user: User; isGuest: boolean } | null {
-  try {
-    const data = localStorage.getItem(SESSION_STORAGE_KEY);
-    return data ? JSON.parse(data) : null;
-  } catch {
-    return null;
-  }
-}
-
-export function saveActiveSession(session: { user: User; isGuest: boolean } | null) {
-  if (session) {
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
-  } else {
-    localStorage.removeItem(SESSION_STORAGE_KEY);
-  }
-}
 
 /* =========================================================================
    AUTH LANDING SCREEN (Login / Sign-Up / Demo / Guest)
    ========================================================================= */
-interface AuthLandingProps {
-  onLoginSuccess: (user: User, isGuest?: boolean) => void;
-}
-
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;

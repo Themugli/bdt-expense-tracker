@@ -8,17 +8,15 @@ import { Toaster } from '@/components/ui/toaster';
 import NotFound from '@/pages/not-found';
 import {
   ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, CalendarDays, Check,
-  ChevronDown, CircleHelp, Download, Edit3, LogOut, Plus, ShieldCheck, Trash2, Wallet, X,
+  ChevronDown, CircleHelp, Download, Edit3, LogOut, Plus, Trash2, Wallet, X,
 } from 'lucide-react';
+import { AuthModal } from '@/components/features/AuthModal';
 import {
-  AuthModal,
-  type User,
   getActiveSession,
   saveActiveSession,
-  getStoredUsers,
-  saveStoredUsers,
-} from './auth';
-import { useExpenses, newExpenseId } from '@/hooks/use-expenses';
+} from '@/lib/auth';
+import type { User, Expense } from '@/types';
+import { useExpenses, newExpenseId } from '@/hooks/useExpenses';
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer,
   Tooltip as ChartTooltip, XAxis, YAxis,
@@ -31,11 +29,8 @@ import {
 } from 'wouter';
 
 const queryClient = new QueryClient();
-
-type Expense = { id: string; date: string; amount: number; category: string; note: string; tags: string[] };
 type Category = { name: string; budget: number; color?: string };
 const DEFAULT_MONTHLY_INCOME = 0;
-const EXPENSES_KEY = 'little-ledger-expenses-v1';
 const CATEGORIES_KEY = 'little-ledger-categories-v1';
 const INCOME_KEY = 'little-ledger-income-v1';
 const initialCategories: Category[] = [
@@ -78,16 +73,6 @@ function readStored<T>(key: string, fallback: T): T {
 }
 function normalizeCategoryName(name: string) {
   return categoryAliases[name] ?? name;
-}
-const DEFAULT_SAMPLE_EXPENSES: Expense[] = [];
-
-function loadExpenses(userId?: string) {
-  const key = userId ? `little-ledger-expenses-usr-${userId}` : EXPENSES_KEY;
-  return readStored<Expense[]>(key, DEFAULT_SAMPLE_EXPENSES).map((item) => ({
-    ...item,
-    category: normalizeCategoryName(item.category),
-    tags: Array.isArray(item.tags) ? item.tags : [],
-  }));
 }
 function loadCategories(userId?: string) {
   const key = userId ? `little-ledger-categories-usr-${userId}` : CATEGORIES_KEY;
@@ -303,12 +288,7 @@ function Home() {
     () => expenses.filter((entry) => monthOf(entry.date) === selectedMonth).sort((a, b) => b.date.localeCompare(a.date)),
     [expenses, selectedMonth],
   );
-  const monthTabs = useMemo(() => [...new Set(expenses.map((entry) => monthOf(entry.date)))].sort((a, b) => b.localeCompare(a)), [expenses]);
-  const monthEntryCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const expense of expenses) counts.set(monthOf(expense.date), (counts.get(monthOf(expense.date)) ?? 0) + 1);
-    return counts;
-  }, [expenses]);
+
   const availableYears = useMemo(
     () => [...new Set([Number(today.slice(0, 4)), ...expenses.map((entry) => Number(entry.date.slice(0, 4)))])].sort((a, b) => b - a),
     [expenses, today],

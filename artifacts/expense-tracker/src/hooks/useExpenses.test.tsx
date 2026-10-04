@@ -1,6 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useExpenses } from './use-expenses';
-import { supabase } from '@/lib/supabase';
+import { useExpenses } from './useExpenses';
 import { vi, describe, it, expect } from 'vitest';
 
 // Mock Supabase to simulate network failure

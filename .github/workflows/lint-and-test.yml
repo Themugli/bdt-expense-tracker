@@ -1,0 +1,25 @@
+name: Lint and Test
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+    - name: Install dependencies
+      run: npm install -g pnpm && pnpm install
+    - name: Run Typecheck
+      run: pnpm run typecheck
+    - name: Run ESLint
+      run: pnpm run -r lint
+    - name: Run Tests
+      run: pnpm run -r test
