@@ -1,5 +1,5 @@
 -- 1. Create an expenses table isolated to the authenticated user
-CREATE TABLE public.expenses (
+CREATE TABLE IF NOT EXISTS public.expenses (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) DEFAULT auth.uid(),
     amount NUMERIC(10, 2) NOT NULL,
@@ -12,6 +12,7 @@ CREATE TABLE public.expenses (
 ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 
 -- 3. Policy: Allow SELECT only if the user is the owner AND has aal2 claim (MFA verified)
+DROP POLICY IF EXISTS "Users can view their own expenses (MFA required)" ON public.expenses;
 CREATE POLICY "Users can view their own expenses (MFA required)"
 ON public.expenses FOR SELECT
 TO authenticated
@@ -21,6 +22,7 @@ USING (
 );
 
 -- 4. Policy: Allow INSERT only if the user is the owner AND has aal2 claim (MFA verified)
+DROP POLICY IF EXISTS "Users can insert their own expenses (MFA required)" ON public.expenses;
 CREATE POLICY "Users can insert their own expenses (MFA required)"
 ON public.expenses FOR INSERT
 TO authenticated
@@ -30,6 +32,7 @@ WITH CHECK (
 );
 
 -- 5. Policy: Allow UPDATE only if the user is the owner AND has aal2 claim (MFA verified)
+DROP POLICY IF EXISTS "Users can update their own expenses (MFA required)" ON public.expenses;
 CREATE POLICY "Users can update their own expenses (MFA required)"
 ON public.expenses FOR UPDATE
 TO authenticated
@@ -43,6 +46,7 @@ WITH CHECK (
 );
 
 -- 6. Policy: Allow DELETE only if the user is the owner AND has aal2 claim (MFA verified)
+DROP POLICY IF EXISTS "Users can delete their own expenses (MFA required)" ON public.expenses;
 CREATE POLICY "Users can delete their own expenses (MFA required)"
 ON public.expenses FOR DELETE
 TO authenticated

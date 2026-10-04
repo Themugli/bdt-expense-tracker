@@ -1,4 +1,4 @@
-CREATE TABLE public.loans (
+CREATE TABLE IF NOT EXISTS public.loans (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
     type TEXT NOT NULL CHECK (type IN ('payable', 'receivable')),
@@ -13,12 +13,16 @@ CREATE TABLE public.loans (
 
 ALTER TABLE public.loans ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "rls_loans_select" ON public.loans;
 CREATE POLICY "rls_loans_select" ON public.loans FOR SELECT TO authenticated USING ((SELECT auth.uid()) = user_id);
+DROP POLICY IF EXISTS "rls_loans_insert" ON public.loans;
 CREATE POLICY "rls_loans_insert" ON public.loans FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) = user_id);
+DROP POLICY IF EXISTS "rls_loans_update" ON public.loans;
 CREATE POLICY "rls_loans_update" ON public.loans FOR UPDATE TO authenticated USING ((SELECT auth.uid()) = user_id) WITH CHECK ((SELECT auth.uid()) = user_id);
+DROP POLICY IF EXISTS "rls_loans_delete" ON public.loans;
 CREATE POLICY "rls_loans_delete" ON public.loans FOR DELETE TO authenticated USING ((SELECT auth.uid()) = user_id);
 
-CREATE INDEX loans_user_idx ON public.loans (user_id);
+CREATE INDEX IF NOT EXISTS loans_user_idx ON public.loans (user_id);
 
 CREATE OR REPLACE FUNCTION public.set_loans_updated_at()
 RETURNS trigger LANGUAGE plpgsql SET search_path = '' AS $$
@@ -28,6 +32,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS loans_set_updated_at ON public.loans;
 CREATE TRIGGER loans_set_updated_at
   BEFORE UPDATE ON public.loans
   FOR EACH ROW EXECUTE FUNCTION public.set_loans_updated_at();
