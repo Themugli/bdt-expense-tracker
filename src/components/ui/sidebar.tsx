@@ -19,7 +19,7 @@ export function Sidebar() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed right-5 top-5 sm:right-7 sm:top-7 z-40 grid h-11 w-11 place-items-center rounded-full bg-white/50 backdrop-blur shadow-sm border border-[#dce5dc] text-[#347d68] hover:bg-white hover:shadow-md transition-all"
+        className="fixed left-6 top-6 z-50 grid h-11 w-11 place-items-center rounded-full bg-white/50 backdrop-blur shadow-sm border border-[#dce5dc] text-[#347d68] hover:bg-white hover:shadow-md transition-all"
         aria-label="Open menu"
       >
         <Menu size={20} strokeWidth={2} />

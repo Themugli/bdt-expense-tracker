@@ -28,7 +28,7 @@ export function TopNav() {
 
   return (
     <>
-      <header className="flex flex-row items-center justify-between w-full px-6 py-5 sm:px-10 lg:px-24 bg-[#fcfcf9] z-40 relative">
+      <header className="flex flex-row items-center justify-between w-full pr-6 pl-20 py-5 sm:pr-10 sm:pl-24 lg:pr-24 lg:pl-[120px] bg-[#fcfcf9] z-40 relative">
         {/* Logo Section */}
         <div className="flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#dce9dc] text-[#347d68]">
