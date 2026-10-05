@@ -798,7 +798,6 @@ export default function DailyLedger() {
               </div>
             </div> : <div className="flex min-h-[190px] flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/70 text-center"><div className="mb-3 grid h-11 w-11 place-items-center rounded-full bg-[#e7eee4] text-[#668b75]"><Wallet size={19} /></div><p className="text-sm font-semibold text-[#547165]">Nothing spent just yet</p><p className="mt-1 max-w-[220px] text-xs leading-relaxed text-[#8a9990]">Your categories will take shape here as you add expenses.</p></div>}
           </section>
-        </div>
 
         <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">One day at a time</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Daily rhythm</h2></div><div className="flex items-center gap-2 text-[11px] text-[#7e9287]"><span className="h-2 w-2 rounded-full bg-[#4d9275]" />Daily spend · BDT</div></div>
