@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/toaster';
 import { supabase } from '@/lib/supabase';
 import { getActiveSession, saveActiveSession } from '@/lib/auth';
@@ -44,31 +45,33 @@ export default function App() {
   }, []);
 
   if (isInitializing) {
-    return <div className="min-h-screen flex items-center justify-center bg-[#f4f4ec]">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-[#f4f4ec] dark:bg-[#121b18]">Loading...</div>;
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route
-          path="/*"
-          element={
-            <>
-              <Sidebar />
-              <TopNav />
-              <Routes>
-                <Route path="/daily" element={<DailyLedger />} />
-                <Route path="/monthly" element={<MonthlyOverview />} />
-                <Route path="/yearly" element={<YearlyOverview />} />
-                <Route path="/loans" element={<LoanTracker />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </>
-          }
-        />
-      </Routes>
-      <Toaster />
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <QueryClientProvider client={queryClient}>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/*"
+            element={
+              <>
+                <Sidebar />
+                <TopNav />
+                <Routes>
+                  <Route path="/daily" element={<DailyLedger />} />
+                  <Route path="/monthly" element={<MonthlyOverview />} />
+                  <Route path="/yearly" element={<YearlyOverview />} />
+                  <Route path="/loans" element={<LoanTracker />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </>
+            }
+          />
+        </Routes>
+        <Toaster />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

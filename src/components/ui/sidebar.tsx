@@ -19,7 +19,7 @@ export function Sidebar() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed left-6 top-6 z-50 grid h-11 w-11 place-items-center rounded-full bg-white/50 backdrop-blur shadow-sm border border-[#dce5dc] text-[#347d68] hover:bg-white hover:shadow-md transition-all"
+        className="fixed left-6 top-6 z-50 grid h-11 w-11 place-items-center rounded-full bg-white/50 backdrop-blur shadow-sm border border-[#dce5dc] dark:border-[#384f46] text-[#347d68] hover:bg-white dark:hover:bg-[#1a2622] hover:shadow-md transition-all"
         aria-label="Open menu"
       >
         <Menu size={20} strokeWidth={2} />
@@ -34,7 +34,7 @@ export function Sidebar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-50 bg-[#24483c]/20 backdrop-blur-sm"
+              className="fixed inset-0 z-50 bg-[#24483c]/20 dark:bg-black/40 backdrop-blur-sm"
             />
 
             {/* Drawer */}
@@ -43,15 +43,15 @@ export function Sidebar() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed bottom-0 left-0 top-0 z-50 w-full max-w-[320px] bg-[#fcfcf9] p-6 shadow-2xl flex flex-col"
+              className="fixed bottom-0 left-0 top-0 z-50 w-full max-w-[320px] bg-[#fcfcf9] dark:bg-[#1a2622] p-6 shadow-2xl flex flex-col"
             >
               <div className="flex items-center justify-between mb-10">
-                <div className="font-display text-[19px] font-extrabold tracking-[-.045em] text-[#24483c]">
+                <div className="font-display text-[19px] font-extrabold tracking-[-.045em] text-[#24483c] dark:text-[#e4e9e7]">
                   little ledger<span className="text-[#d78967]">.</span>
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="grid h-10 w-10 place-items-center rounded-full text-[#768980] hover:bg-[#edf1e8] hover:text-[#347d68] transition-colors"
+                  className="grid h-10 w-10 place-items-center rounded-full text-[#768980] dark:text-[#88a096] hover:bg-[#edf1e8] dark:hover:bg-[#344a42] dark:bg-[#253630] hover:text-[#347d68] transition-colors"
                   aria-label="Close menu"
                 >
                   <X size={20} />
@@ -71,7 +71,7 @@ export function Sidebar() {
                         "flex items-center gap-3 px-4 py-3.5 rounded-full font-semibold text-sm transition-all group",
                         isActive
                           ? "bg-[#347d68] text-white shadow-sm"
-                          : "text-[#597369] hover:bg-[#edf2e9] hover:text-[#355a4d]"
+                          : "text-[#597369] dark:text-[#9bb0a6] hover:bg-[#edf2e9] dark:hover:bg-[#344a42] dark:bg-[#253630] hover:text-[#355a4d] dark:text-[#d1dbd6]"
                       )}
                     >
                       <Icon
@@ -85,7 +85,7 @@ export function Sidebar() {
               </nav>
 
               <div className="mt-auto pt-6 border-t border-[#e6ebe3]">
-                <p className="text-center text-[11px] text-[#93a097]">
+                <p className="text-center text-[11px] text-[#93a097] dark:text-[#7b9087]">
                   Your numbers never leave this device
                 </p>
               </div>

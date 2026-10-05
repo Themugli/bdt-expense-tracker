@@ -188,8 +188,8 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
   // ── Reset Password screen (from email link) ────────────────────────────
   if (mode === 'reset') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f4f4ec] p-4">
-        <div className="max-w-md w-full bg-white p-8 rounded-[24px] shadow-sm border border-[#e6ebe3]">
+      <div className="min-h-screen flex items-center justify-center bg-[#f4f4ec] dark:bg-[#121b18] p-4">
+        <div className="max-w-md w-full bg-white dark:bg-[#1a2622] p-8 rounded-[24px] shadow-sm border border-[#e6ebe3]">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#e3efe4] text-[#347d68] mb-4">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
@@ -215,8 +215,8 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
   // ── Forgot Password screen ─────────────────────────────────────────────
   if (mode === 'forgot') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f4f4ec] p-4">
-        <div className="max-w-md w-full bg-white p-8 rounded-[24px] shadow-sm border border-[#e6ebe3]">
+      <div className="min-h-screen flex items-center justify-center bg-[#f4f4ec] dark:bg-[#121b18] p-4">
+        <div className="max-w-md w-full bg-white dark:bg-[#1a2622] p-8 rounded-[24px] shadow-sm border border-[#e6ebe3]">
           <div className="text-center mb-8">
             <h2 className="font-display text-[24px] font-bold text-[#294d40]">Forgot Password?</h2>
             <p className="text-sm text-[#87968c] mt-1">Enter your email and we'll send a reset link.</p>
@@ -246,8 +246,8 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
 
   // ── Login / Sign Up screens ────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f4ec] p-4">
-      <div className="max-w-md w-full bg-white p-8 rounded-[24px] shadow-sm border border-[#e6ebe3]">
+    <div className="min-h-screen flex items-center justify-center bg-[#f4f4ec] dark:bg-[#121b18] p-4">
+      <div className="max-w-md w-full bg-white dark:bg-[#1a2622] p-8 rounded-[24px] shadow-sm border border-[#e6ebe3]">
         <div className="text-center mb-8">
           <h2 className="font-display text-[26px] font-bold text-[#294d40] tracking-[-.02em]">
             {mode === 'login' ? 'Welcome back' : 'Create account'}
@@ -258,13 +258,13 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
         </div>
 
         {/* Mode toggle */}
-        <div className="flex rounded-2xl border border-[#dce5dc] bg-[#ebeee7] p-1 mb-6">
+        <div className="flex rounded-2xl border border-[#dce5dc] dark:border-[#384f46] bg-[#ebeee7] p-1 mb-6">
           <motion.button {...bounce} type="button" onClick={() => { setMode('login'); clearForm(); }}
-            className={`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition ${mode === 'login' ? 'bg-white text-[#24483c] shadow-sm' : 'text-[#7a8d81] hover:text-[#24483c]'}`}>
+            className={`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition ${mode === 'login' ? 'bg-white dark:bg-[#1a2622] text-[#24483c] dark:text-[#e4e9e7] shadow-sm' : 'text-[#7a8d81] hover:text-[#24483c] dark:text-[#e4e9e7]'}`}>
             Sign In
           </motion.button>
           <motion.button {...bounce} type="button" onClick={() => { setMode('signup'); clearForm(); }}
-            className={`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition ${mode === 'signup' ? 'bg-white text-[#24483c] shadow-sm' : 'text-[#7a8d81] hover:text-[#24483c]'}`}>
+            className={`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition ${mode === 'signup' ? 'bg-white dark:bg-[#1a2622] text-[#24483c] dark:text-[#e4e9e7] shadow-sm' : 'text-[#7a8d81] hover:text-[#24483c] dark:text-[#e4e9e7]'}`}>
             Create Account
           </motion.button>
         </div>

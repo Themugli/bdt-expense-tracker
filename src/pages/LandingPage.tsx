@@ -8,7 +8,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] w-full overflow-hidden bg-[#f4f4ec] text-[#24483c] flex flex-col items-center justify-center">
+    <div className="relative min-h-[100dvh] w-full overflow-hidden bg-[#f4f4ec] dark:bg-[#121b18] text-[#24483c] dark:text-[#e4e9e7] flex flex-col items-center justify-center">
       {/* Animated Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -47,7 +47,7 @@ export default function LandingPage() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="mb-6 flex items-center justify-center gap-3"
         >
-          <div className="font-display text-[24px] sm:text-[32px] font-extrabold tracking-[-.045em] text-[#24483c]">
+          <div className="font-display text-[24px] sm:text-[32px] font-extrabold tracking-[-.045em] text-[#24483c] dark:text-[#e4e9e7]">
             little ledger<span className="text-[#d78967]">.</span>
           </div>
         </motion.div>
@@ -56,7 +56,7 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-          className="font-display text-[42px] sm:text-[64px] font-bold leading-[1.1] tracking-[-.05em] text-[#24483c] mb-6"
+          className="font-display text-[42px] sm:text-[64px] font-bold leading-[1.1] tracking-[-.05em] text-[#24483c] dark:text-[#e4e9e7] mb-6"
         >
           Your money, <br />
           <span className="text-[#d78967]">in perspective.</span>
@@ -66,7 +66,7 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-          className="text-lg sm:text-xl text-[#597369] font-medium mb-10 max-w-xl"
+          className="text-lg sm:text-xl text-[#597369] dark:text-[#9bb0a6] font-medium mb-10 max-w-xl"
         >
           A beautifully simple expense tracker designed to bring clarity to your daily spending. 
           No clutter, no noise. Just your finances, beautifully organized.

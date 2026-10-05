@@ -35,15 +35,15 @@ export function ConfirmModal({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: "spring", bounce: 0, duration: 0.2 }}
-            className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg"
+            className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-[#1a2622] p-6 shadow-lg"
           >
-            <h3 className="mb-2 text-lg font-bold text-slate-900">{title}</h3>
-            <p className="mb-6 text-sm text-slate-500">{description}</p>
+            <h3 className="mb-2 text-lg font-bold text-slate-900 dark:text-slate-100">{title}</h3>
+            <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">{description}</p>
             <div className="flex gap-3">
               <button 
                 type="button" 
                 onClick={onCancel} 
-                className="flex-1 rounded-lg bg-slate-100 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-200 transition"
+                className="bg-white text-slate-900 hover:bg-slate-100 rounded-lg px-4 py-3 flex-1 text-sm font-semibold transition"
               >
                 {cancelText}
               </button>

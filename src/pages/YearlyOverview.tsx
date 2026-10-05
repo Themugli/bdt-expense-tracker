@@ -57,18 +57,18 @@ export default function YearlyOverview() {
   }, [expenses]);
 
   return (
-    <div className="min-h-screen bg-[#fcfcf9] pb-24 pt-8 px-6 sm:px-12 lg:px-24">
+    <div className="min-h-screen bg-[#fcfcf9] dark:bg-[#1a2622] pb-24 pt-8 px-6 sm:px-12 lg:px-24">
       <div className="mx-auto max-w-3xl">
         <header className="mb-12">
-          <h1 className="font-display text-[32px] font-extrabold tracking-[-.045em] text-[#24483c]">
+          <h1 className="font-display text-[32px] font-extrabold tracking-[-.045em] text-[#24483c] dark:text-[#e4e9e7]">
             Yearly Overview
           </h1>
-          <p className="text-sm text-[#597369] mt-2">
+          <p className="text-sm text-[#597369] dark:text-[#9bb0a6] mt-2">
             Spending for {new Date().getFullYear()}
           </p>
           <div className="mt-8">
-            <p className="text-sm font-semibold text-[#768980] uppercase tracking-wider mb-1">Total Spent</p>
-            <div className="text-[56px] font-bold tracking-tight text-[#24483c] leading-none">
+            <p className="text-sm font-semibold text-[#768980] dark:text-[#88a096] uppercase tracking-wider mb-1">Total Spent</p>
+            <div className="text-[56px] font-bold tracking-tight text-[#24483c] dark:text-[#e4e9e7] leading-none">
               ${currentYearData.total.toFixed(2)}
             </div>
           </div>
@@ -86,13 +86,13 @@ export default function YearlyOverview() {
                 className="group"
               >
                 <div className="flex justify-between items-end mb-2">
-                  <span className="font-semibold text-[#24483c] text-[15px]">{cat.name}</span>
+                  <span className="font-semibold text-[#24483c] dark:text-[#e4e9e7] text-[15px]">{cat.name}</span>
                   <div className="text-right">
                     <span className="font-bold text-[#347d68] text-[15px]">${cat.total.toFixed(2)}</span>
-                    <span className="text-[#93a097] text-xs ml-2 font-medium">({percentage.toFixed(1)}%)</span>
+                    <span className="text-[#93a097] dark:text-[#7b9087] text-xs ml-2 font-medium">({percentage.toFixed(1)}%)</span>
                   </div>
                 </div>
-                <div className="h-4 w-full bg-[#e6ebe3] rounded-full overflow-hidden">
+                <div className="h-4 w-full bg-[#e6ebe3] dark:bg-[#2c3f38] rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${percentage}%` }}
@@ -106,7 +106,7 @@ export default function YearlyOverview() {
           })}
 
           {currentYearData.categories.length === 0 && (
-            <div className="text-center py-12 text-[#768980]">
+            <div className="text-center py-12 text-[#768980] dark:text-[#88a096]">
               No expenses recorded for this year yet.
             </div>
           )}
