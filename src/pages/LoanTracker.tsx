@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getActiveSession } from '@/lib/auth';
 import { useLoans } from '@/hooks/useLoans';
@@ -14,13 +14,7 @@ function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan, defaultType
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Sync state when editingLoan changes
-  import('react').then(({ useEffect }) => {
-    // This is a hacky way to use useEffect without importing it at the top, wait we already have it from 'react' at line 1.
-    // Let's just use React.useEffect
-  });
-  
-  React.useEffect(() => {
+  useEffect(() => {
     if (editingLoan && isOpen) {
       setType(editingLoan.type);
       setAmount(editingLoan.amount.toString());
