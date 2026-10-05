@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@/types';
-import { getStoredUsers, saveActiveSession } from '@/lib/auth';
+import { getStoredUsers, saveActiveSession, getActiveSession } from '@/lib/auth';
 
 
 /* =========================================================================
