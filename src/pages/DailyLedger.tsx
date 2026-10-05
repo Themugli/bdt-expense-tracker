@@ -10,6 +10,7 @@ import {
   getActiveSession,
   saveActiveSession,
 } from '@/lib/auth';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import type { User, Expense } from '@/types';
 import { useExpenses, newExpenseId } from '@/hooks/useExpenses';
 import {
@@ -890,39 +891,21 @@ export default function DailyLedger() {
         </div>
       )}</AnimatePresence>
 
-      <AnimatePresence>{categoryToDelete && (
-        <div key="modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.div {...overlayFade} className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setCategoryToDelete(null)}></motion.div>
-          <motion.div {...modalPop} className="relative glass-card max-w-sm w-full rounded-[24px] border border-white/80 p-6 text-center bg-white/95 z-10 shadow-2xl">
-            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[#fae9e4] text-[#b8584b]">
-              <Trash2 size={24} />
-            </div>
-            <h3 className="font-display text-lg font-bold text-[#294d40] mb-2">Delete Category?</h3>
-            <p className="text-sm text-[#627a6d] mb-6">Are you sure you want to delete the "{categoryToDelete}" category? Expenses in this category will be marked as "Uncategorized".</p>
-            <div className="flex items-center gap-3">
-              <motion.button {...bounce} type="button" onClick={() => setCategoryToDelete(null)} className="flex-1 rounded-xl bg-[#f4f5ef] py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</motion.button>
-              <motion.button {...bounce} type="button" onClick={(e) => requireAuth(e, () => { deleteCategory(categoryToDelete); setCategoryToDelete(null); })} className="flex-1 rounded-xl bg-[#b8584b] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a04b40] transition">Confirm</motion.button>
-            </div>
-          </motion.div>
-        </div>
-      )}</AnimatePresence>
+      <ConfirmModal
+        isOpen={!!categoryToDelete}
+        title="Delete Category?"
+        description={`Are you sure you want to delete the "${categoryToDelete}" category? Expenses in this category will be marked as "Uncategorized".`}
+        onCancel={() => setCategoryToDelete(null)}
+        onConfirm={() => requireAuth(undefined, () => { deleteCategory(categoryToDelete!); setCategoryToDelete(null); })}
+      />
 
-      <AnimatePresence>{expenseToDelete && (
-        <div key="modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.div {...overlayFade} className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setExpenseToDelete(null)}></motion.div>
-          <motion.div {...modalPop} className="relative glass-card max-w-sm w-full rounded-[24px] border border-white/80 p-6 text-center bg-white/95 z-10 shadow-2xl">
-            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[#fae9e4] text-[#b8584b]">
-              <Trash2 size={24} />
-            </div>
-            <h3 className="font-display text-lg font-bold text-[#294d40] mb-2">Delete Expense?</h3>
-            <p className="text-sm text-[#627a6d] mb-6">Are you sure you want to delete this expense from your ledger? This action cannot be undone.</p>
-            <div className="flex items-center gap-3">
-              <motion.button {...bounce} type="button" onClick={() => setExpenseToDelete(null)} className="flex-1 rounded-xl bg-[#f4f5ef] py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</motion.button>
-              <motion.button {...bounce} type="button" onClick={(e) => requireAuth(e, () => { void deleteExpense(expenseToDelete); setExpenseToDelete(null); })} className="flex-1 rounded-xl bg-[#b8584b] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#a04b40] transition">Confirm</motion.button>
-            </div>
-          </motion.div>
-        </div>
-      )}</AnimatePresence>
+      <ConfirmModal
+        isOpen={!!expenseToDelete}
+        title="Delete Expense?"
+        description="Are you sure you want to delete this expense from your ledger? This action cannot be undone."
+        onCancel={() => setExpenseToDelete(null)}
+        onConfirm={() => requireAuth(undefined, () => { void deleteExpense(expenseToDelete!); setExpenseToDelete(null); })}
+      />
 
     </main>
   );

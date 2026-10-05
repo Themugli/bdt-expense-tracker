@@ -5,6 +5,7 @@ import { useLoans } from '@/hooks/useLoans';
 import { Plus, X, Calendar as CalendarIcon, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Loan } from '@/types';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan, defaultType = 'payable' }: { isOpen: boolean; onClose: () => void; onSave: (loan: Omit<Loan, 'id'>) => Promise<boolean>; onUpdate?: (loan: Loan) => Promise<boolean>; editingLoan?: Loan | null; defaultType?: 'payable' | 'receivable' }) {
   const [type, setType] = useState<'payable' | 'receivable'>('payable');
@@ -180,6 +181,7 @@ export default function LoanTracker() {
   const [activeTab, setActiveTab] = useState<'payable' | 'receivable'>('payable');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
+  const [loanToDelete, setLoanToDelete] = useState<string | null>(null);
 
   const filteredLoans = loans.filter((l) => l.type === activeTab);
   
@@ -315,11 +317,7 @@ export default function LoanTracker() {
                         <Pencil size={16} />
                       </button>
                       <button
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this loan?')) {
-                            deleteLoan(loan.id);
-                          }
-                        }}
+                        onClick={() => setLoanToDelete(loan.id)}
                         className="p-2 text-[#93a097] hover:bg-[#fee2e2] hover:text-[#dc2626] rounded-full transition-colors"
                         aria-label="Delete loan"
                       >
@@ -353,6 +351,17 @@ export default function LoanTracker() {
         onUpdate={updateLoan}
         editingLoan={editingLoan}
         defaultType={activeTab}
+      />
+
+      <ConfirmModal
+        isOpen={!!loanToDelete}
+        title="Delete this loan?"
+        description="Are you sure you want to delete this loan? This action cannot be undone."
+        onCancel={() => setLoanToDelete(null)}
+        onConfirm={() => {
+          if (loanToDelete) deleteLoan(loanToDelete);
+          setLoanToDelete(null);
+        }}
       />
     </div>
   );
