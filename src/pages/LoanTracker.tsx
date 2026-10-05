@@ -6,7 +6,7 @@ import { Plus, X, Calendar as CalendarIcon, Loader2, Pencil, Trash2 } from 'luci
 import { cn } from '@/lib/utils';
 import type { Loan } from '@/types';
 
-function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan }: { isOpen: boolean; onClose: () => void; onSave: (loan: Omit<Loan, 'id'>) => Promise<boolean>; onUpdate?: (loan: Loan) => Promise<boolean>; editingLoan?: Loan | null }) {
+function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan, defaultType = 'payable' }: { isOpen: boolean; onClose: () => void; onSave: (loan: Omit<Loan, 'id'>) => Promise<boolean>; onUpdate?: (loan: Loan) => Promise<boolean>; editingLoan?: Loan | null; defaultType?: 'payable' | 'receivable' }) {
   const [type, setType] = useState<'payable' | 'receivable'>('payable');
   const [amount, setAmount] = useState('');
   const [personName, setPersonName] = useState('');
@@ -28,13 +28,13 @@ function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan }: { isOpen:
       setDueDate(editingLoan.due_date ? editingLoan.due_date.split('T')[0] : '');
       setNotes(editingLoan.notes || '');
     } else if (isOpen) {
-      setType('payable');
+      setType(defaultType);
       setAmount('');
       setPersonName('');
       setDueDate('');
       setNotes('');
     }
-  }, [editingLoan, isOpen]);
+  }, [editingLoan, isOpen, defaultType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -309,13 +309,13 @@ export default function LoanTracker() {
                       ${loan.amount.toFixed(2)}
                     </div>
                     
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => {
                           setEditingLoan(loan);
                           setIsModalOpen(true);
                         }}
-                        className="p-2 text-[#768980] hover:bg-[#edf1e8] hover:text-[#347d68] rounded-full transition-colors"
+                        className="p-2 text-[#93a097] hover:bg-[#edf1e8] hover:text-[#347d68] rounded-full transition-colors"
                         aria-label="Edit loan"
                       >
                         <Pencil size={16} />
@@ -326,7 +326,7 @@ export default function LoanTracker() {
                             deleteLoan(loan.id);
                           }
                         }}
-                        className="p-2 text-[#768980] hover:bg-[#fee2e2] hover:text-[#dc2626] rounded-full transition-colors"
+                        className="p-2 text-[#93a097] hover:bg-[#fee2e2] hover:text-[#dc2626] rounded-full transition-colors"
                         aria-label="Delete loan"
                       >
                         <Trash2 size={16} />
@@ -358,6 +358,7 @@ export default function LoanTracker() {
         onSave={addLoan} 
         onUpdate={updateLoan}
         editingLoan={editingLoan}
+        defaultType={activeTab}
       />
     </div>
   );
