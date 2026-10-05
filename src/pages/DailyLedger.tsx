@@ -590,7 +590,7 @@ export default function DailyLedger() {
               <form onSubmit={submitExpense} noValidate className="space-y-3">
                 <div className="grid grid-cols-[1fr_1.05fr] gap-3">
                   <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Amount</span><div className={`flex h-11 items-center rounded-xl border ${amountError ? 'border-[#b8584b]' : 'border-[#dce5dc] focus-within:border-[#84a998]'} bg-[#fffdf8]/75 px-3`}><span className={`mr-2 text-sm font-semibold ${amountError ? 'text-[#b8584b]' : 'text-[#779284]'}`}>৳</span><input aria-label="Amount in BDT" data-testid="input-expense-amount" type="number" min="0.01" step="0.01" value={amount} onChange={(event) => { setAmount(event.target.value); if (amountError) setAmountError(false); }} placeholder="0.00" className={`w-full bg-transparent text-sm font-semibold ${amountError ? 'text-[#b8584b]' : 'text-[#315548]'} outline-none placeholder:font-normal placeholder:text-[#b7c0b9]`} /></div>
-                  {amountError && <span className="mt-1 block text-[10px] font-semibold text-[#b8584b]">Please enter a valid amount</span>}
+                  {amountError && <p className="text-sm text-red-500 mt-1 ml-1">Please enter a valid number.</p>}
                   </label>
                   <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Date</span><input aria-label="Expense date" data-testid="input-expense-date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e]" /></label>
                 </div>

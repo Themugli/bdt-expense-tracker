@@ -14,6 +14,7 @@ function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan, defaultType
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [amountError, setAmountError] = useState('');
 
   useEffect(() => {
     if (editingLoan && isOpen) {
@@ -33,7 +34,15 @@ function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan, defaultType
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!amount || !personName) return;
+    
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      setAmountError('Please enter a valid number.');
+      return;
+    }
+    setAmountError('');
     setIsSaving(true);
     
     let success = false;
@@ -89,7 +98,7 @@ function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan, defaultType
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
                 <div className="flex rounded-full bg-[#edf1e8] p-1">
                   <button
                     type="button"
@@ -114,10 +123,17 @@ function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan, defaultType
                     step="0.01"
                     required
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="w-full rounded-full bg-[#edf1e8] px-5 py-3.5 text-[#24483c] font-medium placeholder:text-[#93a097] focus:outline-none focus:ring-2 focus:ring-[#347d68]/20 transition-all border-none"
+                    onChange={(e) => {
+                      setAmount(e.target.value);
+                      if (amountError) setAmountError('');
+                    }}
+                    className={cn(
+                      "w-full rounded-full bg-[#edf1e8] px-5 py-3.5 text-[#24483c] font-medium placeholder:text-[#93a097] focus:outline-none focus:ring-2 focus:ring-[#347d68]/20 transition-all border-none",
+                      amountError ? "ring-2 ring-red-500 focus:ring-red-500" : ""
+                    )}
                     placeholder="0.00"
                   />
+                  {amountError && <p className="text-sm text-red-500 mt-1 ml-2">{amountError}</p>}
                 </div>
 
                 <div>
