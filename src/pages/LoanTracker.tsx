@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getActiveSession } from '@/lib/auth';
 import { useLoans } from '@/hooks/useLoans';
-import { Plus, X, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Plus, X, Calendar as CalendarIcon, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Loan } from '@/types';
 
-function LoanModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () => void; onSave: (loan: Omit<Loan, 'id'>) => Promise<boolean> }) {
+function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan }: { isOpen: boolean; onClose: () => void; onSave: (loan: Omit<Loan, 'id'>) => Promise<boolean>; onUpdate?: (loan: Loan) => Promise<boolean>; editingLoan?: Loan | null }) {
   const [type, setType] = useState<'payable' | 'receivable'>('payable');
   const [amount, setAmount] = useState('');
   const [personName, setPersonName] = useState('');
@@ -14,24 +14,56 @@ function LoanModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () =
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!amount || !personName) return;
-    setIsSaving(true);
-    const success = await onSave({
-      type,
-      amount: parseFloat(amount),
-      person_name: personName,
-      due_date: dueDate || null,
-      notes,
-      status: 'pending',
-    });
-    setIsSaving(false);
-    if (success) {
+  // Sync state when editingLoan changes
+  import('react').then(({ useEffect }) => {
+    // This is a hacky way to use useEffect without importing it at the top, wait we already have it from 'react' at line 1.
+    // Let's just use React.useEffect
+  });
+  
+  React.useEffect(() => {
+    if (editingLoan && isOpen) {
+      setType(editingLoan.type);
+      setAmount(editingLoan.amount.toString());
+      setPersonName(editingLoan.person_name);
+      setDueDate(editingLoan.due_date ? editingLoan.due_date.split('T')[0] : '');
+      setNotes(editingLoan.notes || '');
+    } else if (isOpen) {
+      setType('payable');
       setAmount('');
       setPersonName('');
       setDueDate('');
       setNotes('');
+    }
+  }, [editingLoan, isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount || !personName) return;
+    setIsSaving(true);
+    
+    let success = false;
+    if (editingLoan && onUpdate) {
+      success = await onUpdate({
+        ...editingLoan,
+        type,
+        amount: parseFloat(amount),
+        person_name: personName,
+        due_date: dueDate || null,
+        notes,
+      });
+    } else {
+      success = await onSave({
+        type,
+        amount: parseFloat(amount),
+        person_name: personName,
+        due_date: dueDate || null,
+        notes,
+        status: 'pending',
+      });
+    }
+    
+    setIsSaving(false);
+    if (success) {
       onClose();
     }
   };
@@ -56,7 +88,7 @@ function LoanModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () =
               className="w-full max-w-md bg-[#fcfcf9] rounded-[32px] p-6 shadow-2xl pointer-events-auto flex flex-col"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="font-display text-[22px] font-extrabold text-[#24483c]">Add Loan</h2>
+                <h2 className="font-display text-[22px] font-extrabold text-[#24483c]">{editingLoan ? 'Edit Loan' : 'Add Loan'}</h2>
                 <button onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full text-[#768980] hover:bg-[#edf1e8] hover:text-[#347d68] transition-colors">
                   <X size={20} />
                 </button>
@@ -134,7 +166,7 @@ function LoanModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () =
                   disabled={isSaving}
                   className="mt-4 flex items-center justify-center gap-2 rounded-full bg-[#347d68] py-4 text-base font-bold text-white shadow-lg shadow-[#347d68]/20 hover:bg-[#2a6855] hover:shadow-xl transition-all disabled:opacity-70"
                 >
-                  {isSaving ? <Loader2 size={20} className="animate-spin" /> : 'Save Loan'}
+                  {isSaving ? <Loader2 size={20} className="animate-spin" /> : (editingLoan ? 'Update Loan' : 'Save Loan')}
                 </button>
               </form>
             </motion.div>
@@ -149,10 +181,11 @@ export default function LoanTracker() {
   const session = getActiveSession();
   const isGuest = session ? session.isGuest : true;
   
-  const { loans, isLoading, addLoan, updateLoan } = useLoans();
+  const { loans, isLoading, addLoan, updateLoan, deleteLoan } = useLoans();
 
   const [activeTab, setActiveTab] = useState<'payable' | 'receivable'>('payable');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
 
   const filteredLoans = loans.filter((l) => l.type === activeTab);
   
@@ -173,7 +206,10 @@ export default function LoanTracker() {
             <p className="text-sm text-[#597369] mt-2">Manage your payables and receivables</p>
           </div>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingLoan(null);
+              setIsModalOpen(true);
+            }}
             className="flex h-12 w-12 items-center justify-center rounded-full bg-[#347d68] text-white shadow-lg shadow-[#347d68]/20 hover:bg-[#2a6855] hover:scale-105 transition-all"
             aria-label="Add Loan"
           >
@@ -261,15 +297,41 @@ export default function LoanTracker() {
                       </button>
                     </div>
                     {(loan.due_date || loan.notes) && (
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-[#768980] text-xs font-medium">
-                        {loan.due_date && <span>Due: {new Date(loan.due_date).toLocaleDateString()}</span>}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-[#768980] text-xs font-medium mt-1">
+                        {loan.due_date && <span>Due: {new Date(loan.due_date + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
                         {loan.notes && <span className="line-clamp-1">{loan.notes}</span>}
                       </div>
                     )}
                   </div>
                   
-                  <div className={cn("text-[20px] font-bold", activeTab === 'payable' ? "text-[#d78967]" : "text-[#347d68]", loan.status === 'settled' && "text-[#93a097]")}>
-                    ${loan.amount.toFixed(2)}
+                  <div className="flex items-center gap-4">
+                    <div className={cn("text-[20px] font-bold", activeTab === 'payable' ? "text-[#d78967]" : "text-[#347d68]", loan.status === 'settled' && "text-[#93a097]")}>
+                      ${loan.amount.toFixed(2)}
+                    </div>
+                    
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => {
+                          setEditingLoan(loan);
+                          setIsModalOpen(true);
+                        }}
+                        className="p-2 text-[#768980] hover:bg-[#edf1e8] hover:text-[#347d68] rounded-full transition-colors"
+                        aria-label="Edit loan"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to delete this loan?')) {
+                            deleteLoan(loan.id);
+                          }
+                        }}
+                        className="p-2 text-[#768980] hover:bg-[#fee2e2] hover:text-[#dc2626] rounded-full transition-colors"
+                        aria-label="Delete loan"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -290,7 +352,13 @@ export default function LoanTracker() {
         )}
       </div>
 
-      <LoanModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={addLoan} />
+      <LoanModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSave={addLoan} 
+        onUpdate={updateLoan}
+        editingLoan={editingLoan}
+      />
     </div>
   );
 }
