@@ -28,7 +28,15 @@ export default function App() {
         };
         saveActiveSession({ user, isGuest: false });
       } else {
-        saveActiveSession(null);
+        const currentSession = getActiveSession();
+        if (!currentSession || !currentSession.isGuest) {
+          const guestUser: User = {
+            id: 'guest_v2',
+            name: 'Guest User',
+            email: 'guest@device.local',
+          };
+          saveActiveSession({ user: guestUser, isGuest: true });
+        }
       }
       setIsInitializing(false);
     });

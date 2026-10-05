@@ -129,15 +129,7 @@ export default function DailyLedger() {
 
   const today = localDate();
 
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (!currentUser && !showAuthModal) {
-      timer = setTimeout(() => setShowAuthModal(true), 8000);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [currentUser, showAuthModal]);
+
   const { expenses, addExpense, updateExpense, deleteExpense, recategorize } = useExpenses({ ledgerId: currentUser?.id ?? null, isGuest });
   
   const [categories, setCategories] = useState<Category[]>(() => loadCategories(currentUser?.id));
@@ -392,6 +384,10 @@ export default function DailyLedger() {
     if (monthOf(date) !== selectedMonth) setSelectedMonth(monthOf(date));
     setSelectedYear(Number(date.slice(0, 4)));
     clearForm();
+    
+    if (isGuest && !editingId) {
+      setShowAuthModal(true);
+    }
   }
   function startEdit(expense: Expense) {
     setEditingId(expense.id);
@@ -511,47 +507,56 @@ export default function DailyLedger() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* User Profile Menu */}
-            <div className="relative">
+            {/* User Profile Menu / Login Button */}
+            {isGuest ? (
               <motion.button {...bounce}
-                type="button"
-                onClick={() => setUserMenuOpen((prev) => !prev)}
-                className="flex items-center gap-2.5 rounded-2xl border border-[#dce5dc] bg-white/90 p-1.5 pr-3 hover:bg-white transition shadow-sm"
+                onClick={() => setShowAuthModal(true)}
+                className="flex items-center justify-center h-10 px-4 rounded-lg bg-slate-900 text-sm font-semibold text-white hover:bg-slate-800 transition"
               >
-                <div className="grid h-8 w-8 place-items-center rounded-xl bg-[#347d68] text-xs font-bold text-white uppercase">
-                  {isGuest ? 'GU' : currentUser?.name?.split(' ').map((p) => p[0]).join('').slice(0, 2) || 'G'}
-                </div>
-                <div className="hidden sm:block text-left">
-                  <div className="text-xs font-bold text-[#24483c] leading-tight">{currentUser?.name || 'Guest'}</div>
-                  <div className="text-[10px] text-[#7f9086] leading-tight">{isGuest ? 'Guest Mode (Local)' : 'Personal Account'}</div>
-                </div>
-                <ChevronDown size={14} className="text-[#86968c]" />
+                Log In
               </motion.button>
+            ) : (
+              <div className="relative">
+                <motion.button {...bounce}
+                  type="button"
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-2.5 rounded-2xl border border-[#dce5dc] bg-white/90 p-1.5 pr-3 hover:bg-white transition shadow-sm"
+                >
+                  <div className="grid h-8 w-8 place-items-center rounded-xl bg-[#347d68] text-xs font-bold text-white uppercase">
+                    {currentUser?.name?.split(' ').map((p) => p[0]).join('').slice(0, 2) || 'U'}
+                  </div>
+                  <div className="hidden sm:block text-left">
+                    <div className="text-xs font-bold text-[#24483c] leading-tight">{currentUser?.name || 'User'}</div>
+                    <div className="text-[10px] text-[#7f9086] leading-tight">Personal Account</div>
+                  </div>
+                  <ChevronDown size={14} className="text-[#86968c]" />
+                </motion.button>
 
-              {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-[#dce5dc] bg-white p-2 shadow-xl z-40 animate-fade-in">
-                  <div className="px-3 py-2 border-b border-[#edf0e9]">
-                    <div className="text-xs font-bold text-[#24483c]">{currentUser?.name || 'Guest'}</div>
-                    <div className="text-[11px] text-[#819087] truncate">{currentUser?.email || ''}</div>
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-[#dce5dc] bg-white p-2 shadow-xl z-40 animate-fade-in">
+                    <div className="px-3 py-2 border-b border-[#edf0e9]">
+                      <div className="text-xs font-bold text-[#24483c]">{currentUser?.name || 'User'}</div>
+                      <div className="text-[11px] text-[#819087] truncate">{currentUser?.email || ''}</div>
+                    </div>
+                    <div className="pt-1 border-t border-[#edf0e9]">
+                      <motion.button {...bounce}
+                        type="button"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          saveActiveSession(null);
+                          setCurrentUser(null);
+                          void supabase.auth.signOut();
+                        }}
+                        className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#b8584b] hover:bg-[#fae9e4] transition"
+                      >
+                        <LogOut size={16} />
+                        <span>Log Out</span>
+                      </motion.button>
+                    </div>
                   </div>
-                  <div className="pt-1 border-t border-[#edf0e9]">
-                    <motion.button {...bounce}
-                      type="button"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        saveActiveSession(null);
-                        setCurrentUser(null);
-                        if (!isGuest) void supabase.auth.signOut();
-                      }}
-                      className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#b8584b] hover:bg-[#fae9e4] transition"
-                    >
-                      <LogOut size={16} />
-                      <span>Log Out</span>
-                    </motion.button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </header>
 
@@ -643,7 +648,7 @@ export default function DailyLedger() {
         <div className="mb-5 grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
           {(() => {
             const formContent = (
-              <form onSubmit={(e) => requireAuth(e, () => submitExpense(e))} noValidate className="space-y-3">
+              <form onSubmit={submitExpense} noValidate className="space-y-3">
                 <div className="grid grid-cols-[1fr_1.05fr] gap-3">
                   <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Amount</span><div className={`flex h-11 items-center rounded-xl border ${amountError ? 'border-[#b8584b]' : 'border-[#dce5dc] focus-within:border-[#84a998]'} bg-[#fffdf8]/75 px-3`}><span className={`mr-2 text-sm font-semibold ${amountError ? 'text-[#b8584b]' : 'text-[#779284]'}`}>৳</span><input aria-label="Amount in BDT" data-testid="input-expense-amount" type="number" min="0.01" step="0.01" value={amount} onChange={(event) => { setAmount(event.target.value); if (amountError) setAmountError(false); }} placeholder="0.00" className={`w-full bg-transparent text-sm font-semibold ${amountError ? 'text-[#b8584b]' : 'text-[#315548]'} outline-none placeholder:font-normal placeholder:text-[#b7c0b9]`} /></div>
                   {amountError && <span className="mt-1 block text-[10px] font-semibold text-[#b8584b]">Please enter a valid amount</span>}

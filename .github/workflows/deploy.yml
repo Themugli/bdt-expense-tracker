@@ -27,11 +27,9 @@ jobs:
           version: 9
 
       - name: Install Dependencies
-        working-directory: artifacts/expense-tracker
         run: pnpm install --no-frozen-lockfile
 
       - name: Build
-        working-directory: artifacts/expense-tracker
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
@@ -45,4 +43,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./artifacts/expense-tracker/dist
+          publish_dir: ./dist

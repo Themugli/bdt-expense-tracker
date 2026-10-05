@@ -23,6 +23,8 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
+  
+  const isGuest = getActiveSession()?.isGuest;
 
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
@@ -60,6 +62,29 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
         name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
         email: data.user.email || loginEmail.trim(),
       };
+      
+      // Migrate guest data if exists
+      if (isGuest) {
+        try {
+          const guestKey = "little-ledger-expenses-usr-guest_v2";
+          const guestData = localStorage.getItem(guestKey);
+          if (guestData && guestData !== "[]") {
+            const newKey = `little-ledger-expenses-usr-${resolvedId}`;
+            const existingData = localStorage.getItem(newKey);
+            if (!existingData || existingData === "[]") {
+              localStorage.setItem(newKey, guestData);
+            } else {
+              const existing = JSON.parse(existingData);
+              const guest = JSON.parse(guestData);
+              localStorage.setItem(newKey, JSON.stringify([...existing, ...guest]));
+            }
+            localStorage.removeItem(guestKey);
+          }
+        } catch (err) {
+          console.error("Failed to migrate guest data", err);
+        }
+      }
+
       if (rememberMe) saveActiveSession({ user, isGuest: false });
       onLoginSuccess(user);
     }
@@ -86,11 +111,35 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
     }
 
     if (data.user) {
+      const resolvedId = data.user.user_metadata?.ledger_id || initialId;
       const user: User = {
-        id: data.user.user_metadata?.ledger_id || initialId,
+        id: resolvedId,
         name: signupName.trim(),
         email: data.user.email || signupEmail.trim(),
       };
+      
+      // Migrate guest data if exists
+      if (isGuest) {
+        try {
+          const guestKey = "little-ledger-expenses-usr-guest_v2";
+          const guestData = localStorage.getItem(guestKey);
+          if (guestData && guestData !== "[]") {
+            const newKey = `little-ledger-expenses-usr-${resolvedId}`;
+            const existingData = localStorage.getItem(newKey);
+            if (!existingData || existingData === "[]") {
+              localStorage.setItem(newKey, guestData);
+            } else {
+              const existing = JSON.parse(existingData);
+              const guest = JSON.parse(guestData);
+              localStorage.setItem(newKey, JSON.stringify([...existing, ...guest]));
+            }
+            localStorage.removeItem(guestKey);
+          }
+        } catch (err) {
+          console.error("Failed to migrate guest data", err);
+        }
+      }
+
       if (rememberMe) saveActiveSession({ user, isGuest: false });
       onLoginSuccess(user);
     }
@@ -145,6 +194,13 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
                 Create Account
               </motion.button>
             </div>
+
+            {isGuest && (
+              <div className="mb-5 rounded-xl bg-[#fffaf0] p-3.5 border border-[#faecd4] text-[11px] leading-relaxed text-[#8a7251]">
+                <strong className="block mb-0.5 text-xs text-[#70583b]">Guest Session Active</strong>
+                Your current session data will be lost if you clear your browser without creating an account. Sign up or log in to save your progress permanently.
+              </div>
+            )}
 
             {errorMsg && (
               <div className="mb-4 rounded-xl p-3 text-xs leading-relaxed bg-[#fae9e4] border border-[#f5cfc7] text-[#b8584b]">
