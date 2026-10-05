@@ -15,7 +15,7 @@ import { getStoredUsers, saveActiveSession } from '@/lib/auth';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoginSuccess: (user: User, isGuest?: boolean) => void;
+  onLoginSuccess: (user: User) => void;
 }
 
 export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
@@ -61,7 +61,7 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
         email: data.user.email || loginEmail.trim(),
       };
       if (rememberMe) saveActiveSession({ user, isGuest: false });
-      onLoginSuccess(user, false);
+      onLoginSuccess(user);
     }
   }
 
@@ -92,18 +92,8 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
         email: data.user.email || signupEmail.trim(),
       };
       if (rememberMe) saveActiveSession({ user, isGuest: false });
-      onLoginSuccess(user, false);
+      onLoginSuccess(user);
     }
-  }
-
-  function handleGuestMode() {
-    const guestUser: User = {
-      id: 'guest_v2',
-      name: 'Guest User',
-      email: 'guest@device.local',
-    };
-    saveActiveSession({ user: guestUser, isGuest: true });
-    onLoginSuccess(guestUser, true);
   }
 
   return (
@@ -273,23 +263,6 @@ export function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
                 </motion.button>
               </form>
             )}
-
-            <div className="relative my-6 text-center text-[10px] font-bold uppercase tracking-wider text-[#9aa9a0]">
-              <span className="bg-[#f8f7f2] px-3 relative z-10">Or quick access</span>
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#dce5dc]" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3">
-              <motion.button {...bounce}
-                type="button"
-                onClick={handleGuestMode}
-                className="h-10 flex items-center justify-center gap-2 rounded-xl border border-[#dce5dc] bg-white/70 px-3 text-xs font-semibold text-[#627a6d] hover:bg-white transition"
-              >
-                <UserCheck size={14} /> Continue as Guest
-              </motion.button>
-            </div>
           </motion.div>
         </div>
       )}

@@ -28,10 +28,7 @@ export default function App() {
         };
         saveActiveSession({ user, isGuest: false });
       } else {
-        const currentSession = getActiveSession();
-        if (currentSession && !currentSession.isGuest) {
-          saveActiveSession(null);
-        }
+        saveActiveSession(null);
       }
       setIsInitializing(false);
     });
