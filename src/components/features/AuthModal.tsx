@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { bounce } from '@/lib/motion';
 import { useState, type FormEvent } from 'react';
 import {
-  ArrowRight, Check, Eye, EyeOff, Lock, Mail, UserCheck, Wallet, X
+  ArrowRight, Check, Eye, EyeOff, Lock, Mail, Wallet, X
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@/types';

@@ -4,11 +4,10 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, CalendarDays, Check,
-  ChevronDown, CircleHelp, Download, Edit3, LogOut, Plus, Trash2, Wallet, X,
+  ChevronDown, CircleHelp, Download, Edit3, Plus, Trash2, Wallet, X,
 } from 'lucide-react';
 import {
   getActiveSession,
-  saveActiveSession,
 } from '@/lib/auth';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import type { User, Expense } from '@/types';
@@ -107,7 +106,7 @@ function colorForCategory(name: string, categories: Category[]) {
 }
 
 export default function DailyLedger() {
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+  const [currentUser] = useState<User | null>(() => {
     const session = getActiveSession();
     return session ? session.user : null;
   });
@@ -120,11 +119,11 @@ export default function DailyLedger() {
     if (action) action();
     return true;
   };
-  const [isGuest, setIsGuest] = useState<boolean>(() => {
+  const [isGuest] = useState<boolean>(() => {
     const session = getActiveSession();
     return session ? session.isGuest : false;
   });
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
 
   const today = localDate();
 
@@ -498,68 +497,7 @@ export default function DailyLedger() {
   return (
     <main className="money-page min-h-[100dvh] px-4 pb-12 pt-5 sm:px-7 lg:px-10">
       <div className="mx-auto max-w-[1180px]">
-        <header className="relative z-50 rise-in mb-8 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#dce9dc] text-[#347d68]"><Wallet size={21} strokeWidth={1.8} /></div>
-            <div>
-              <div className="font-display text-[19px] font-extrabold tracking-[-.045em] text-[#24483c]">little ledger<span className="text-[#d78967]">.</span></div>
-              <div className="text-[11px] font-medium tracking-[.12em] text-[#819087]">YOUR MONEY, IN PERSPECTIVE</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* User Profile Menu / Login Button */}
-            {isGuest ? (
-              <motion.button {...bounce}
-                onClick={() => window.dispatchEvent(new Event('open-auth-modal'))}
-                className="flex items-center justify-center h-10 px-4 rounded-lg bg-slate-900 text-sm font-semibold text-white hover:bg-slate-800 transition"
-              >
-                Log In
-              </motion.button>
-            ) : (
-              <div className="relative">
-                <motion.button {...bounce}
-                  type="button"
-                  onClick={() => setUserMenuOpen((prev) => !prev)}
-                  className="flex items-center gap-2.5 rounded-2xl border border-[#dce5dc] bg-white/90 p-1.5 pr-3 hover:bg-white transition shadow-sm"
-                >
-                  <div className="grid h-8 w-8 place-items-center rounded-xl bg-[#347d68] text-xs font-bold text-white uppercase">
-                    {currentUser?.name?.split(' ').map((p) => p[0]).join('').slice(0, 2) || 'U'}
-                  </div>
-                  <div className="hidden sm:block text-left">
-                    <div className="text-xs font-bold text-[#24483c] leading-tight">{currentUser?.name || 'User'}</div>
-                    <div className="text-[10px] text-[#7f9086] leading-tight">Personal Account</div>
-                  </div>
-                  <ChevronDown size={14} className="text-[#86968c]" />
-                </motion.button>
-
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-[#dce5dc] bg-white p-2 shadow-xl z-40 animate-fade-in">
-                    <div className="px-3 py-2 border-b border-[#edf0e9]">
-                      <div className="text-xs font-bold text-[#24483c]">{currentUser?.name || 'User'}</div>
-                      <div className="text-[11px] text-[#819087] truncate">{currentUser?.email || ''}</div>
-                    </div>
-                    <div className="pt-1 border-t border-[#edf0e9]">
-                      <motion.button {...bounce}
-                        type="button"
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          saveActiveSession(null);
-                          setCurrentUser(null);
-                          void supabase.auth.signOut();
-                        }}
-                        className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#b8584b] hover:bg-[#fae9e4] transition"
-                      >
-                        <LogOut size={16} />
-                        <span>Log Out</span>
-                      </motion.button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </header>
+        {/* Header removed, now using global TopNav */}
 
         <section className="rise-in mb-5 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>

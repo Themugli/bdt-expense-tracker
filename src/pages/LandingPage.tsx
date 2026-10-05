@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { getActiveSession } from '@/lib/auth';
 
 export default function LandingPage() {
   const navigate = useNavigate();
