@@ -72,6 +72,12 @@ export function TopNav() {
                 <ChevronDown size={14} className="text-[#86968c]" />
               </motion.button>
 
+              {userMenuOpen && (
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setUserMenuOpen(false)} 
+                />
+              )}
               <AnimatePresence>
                 {userMenuOpen && (
                   <motion.div 
