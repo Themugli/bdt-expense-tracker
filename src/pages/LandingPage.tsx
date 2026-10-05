@@ -1,20 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { AuthModal } from '@/components/features/AuthModal';
 import { getActiveSession } from '@/lib/auth';
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-
   const handleGetStarted = () => {
-    const session = getActiveSession();
-    if (session) {
-      navigate('/daily');
-    } else {
-      setShowAuthModal(true);
-    }
+    navigate('/daily');
   };
 
   return (
@@ -96,14 +88,6 @@ export default function LandingPage() {
         </motion.div>
       </div>
 
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onLoginSuccess={() => {
-          setShowAuthModal(false);
-          navigate('/daily');
-        }}
-      />
     </div>
   );
 }
