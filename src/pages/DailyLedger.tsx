@@ -6,7 +6,6 @@ import {
   ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, CalendarDays, Check,
   ChevronDown, CircleHelp, Download, Edit3, LogOut, Plus, Trash2, Wallet, X,
 } from 'lucide-react';
-import { AuthModal } from '@/components/features/AuthModal';
 import {
   getActiveSession,
   saveActiveSession,
@@ -107,7 +106,6 @@ function colorForCategory(name: string, categories: Category[]) {
 }
 
 export default function DailyLedger() {
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const session = getActiveSession();
     return session ? session.user : null;
@@ -115,7 +113,7 @@ export default function DailyLedger() {
   const requireAuth = (e?: React.SyntheticEvent, action?: () => void) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
     if (!currentUser) {
-      setShowAuthModal(true);
+      window.dispatchEvent(new Event('open-auth-modal'));
       return false;
     }
     if (action) action();
@@ -376,6 +374,8 @@ export default function DailyLedger() {
       id: editingId ?? newExpenseId(),
       date, amount: parsedAmount, category: chosenCategory, note: note.trim(), tags: parseTags(tagInput),
     };
+    const isFirstEntry = expenses.length === 0;
+    
     if (editingId) {
       void updateExpense(updated);
     } else {
@@ -385,8 +385,8 @@ export default function DailyLedger() {
     setSelectedYear(Number(date.slice(0, 4)));
     clearForm();
     
-    if (isGuest && !editingId) {
-      setShowAuthModal(true);
+    if (isGuest && !editingId && isFirstEntry) {
+      window.dispatchEvent(new Event('open-auth-modal'));
     }
   }
   function startEdit(expense: Expense) {
@@ -510,7 +510,7 @@ export default function DailyLedger() {
             {/* User Profile Menu / Login Button */}
             {isGuest ? (
               <motion.button {...bounce}
-                onClick={() => setShowAuthModal(true)}
+                onClick={() => window.dispatchEvent(new Event('open-auth-modal'))}
                 className="flex items-center justify-center h-10 px-4 rounded-lg bg-slate-900 text-sm font-semibold text-white hover:bg-slate-800 transition"
               >
                 Log In
@@ -924,15 +924,6 @@ export default function DailyLedger() {
         </div>
       )}</AnimatePresence>
 
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onLoginSuccess={(user, guest = false) => {
-          setCurrentUser(user);
-          setIsGuest(guest);
-          setShowAuthModal(false);
-        }}
-      />
     </main>
   );
 }

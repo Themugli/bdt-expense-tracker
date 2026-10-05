@@ -11,6 +11,7 @@ import MonthlyOverview from '@/pages/MonthlyOverview';
 import YearlyOverview from '@/pages/YearlyOverview';
 import LoanTracker from '@/pages/LoanTracker';
 import { Sidebar } from '@/components/ui/sidebar';
+import { TopNav } from '@/components/ui/TopNav';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ export default function App() {
           element={
             <>
               <Sidebar />
+              <TopNav />
               <Routes>
                 <Route path="/daily" element={<DailyLedger />} />
                 <Route path="/monthly" element={<MonthlyOverview />} />
