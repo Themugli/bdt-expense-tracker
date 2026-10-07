@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, CalendarDays, BarChart3, LineChart, HandCoins } from 'lucide-react';
+import { Menu, X, Wallet, HandCoins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function Sidebar() {
@@ -9,9 +9,7 @@ export function Sidebar() {
   const location = useLocation();
 
   const links = [
-    { name: 'Daily Ledger', path: '/daily', icon: CalendarDays },
-    { name: 'Monthly Overview', path: '/monthly', icon: BarChart3 },
-    { name: 'Yearly Overview', path: '/yearly', icon: LineChart },
+    { name: 'Ledger', path: '/daily', icon: Wallet },
     { name: 'Loan Tracker', path: '/loans', icon: HandCoins },
   ];
 
