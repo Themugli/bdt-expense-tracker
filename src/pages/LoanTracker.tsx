@@ -93,7 +93,7 @@ function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan, defaultType
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-display text-[22px] font-extrabold text-[#24483c] dark:text-[#e4e9e7]">{editingLoan ? 'Edit Loan' : 'Add Loan'}</h2>
-                <button onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full text-[#768980] dark:text-[#88a096] hover:bg-[#edf1e8] dark:hover:bg-[#344a42] dark:bg-[#253630] hover:text-[#347d68] transition-colors">
+                <button onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full text-[#768980] dark:text-[#88a096] hover:bg-[#edf1e8] dark:hover:bg-[#344a42] dark:bg-[#253630] hover:text-emerald-600 dark:text-emerald-500 transition-colors">
                   <X size={20} />
                 </button>
               </div>
@@ -103,14 +103,14 @@ function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan, defaultType
                   <button
                     type="button"
                     onClick={() => setType('payable')}
-                    className={cn("flex-1 rounded-full py-2.5 text-sm font-bold transition-all", type === 'payable' ? "bg-white dark:bg-[#1a2622] text-[#24483c] dark:text-[#e4e9e7] shadow-sm" : "text-[#768980] dark:text-[#88a096] hover:text-[#347d68]")}
+                    className={cn("flex-1 rounded-full py-2.5 text-sm font-bold transition-all", type === 'payable' ? "bg-white dark:bg-[#1a2622] text-[#24483c] dark:text-[#e4e9e7] shadow-sm" : "text-[#768980] dark:text-[#88a096] hover:text-emerald-600 dark:text-emerald-500")}
                   >
                     I Owe
                   </button>
                   <button
                     type="button"
                     onClick={() => setType('receivable')}
-                    className={cn("flex-1 rounded-full py-2.5 text-sm font-bold transition-all", type === 'receivable' ? "bg-white dark:bg-[#1a2622] text-[#24483c] dark:text-[#e4e9e7] shadow-sm" : "text-[#768980] dark:text-[#88a096] hover:text-[#347d68]")}
+                    className={cn("flex-1 rounded-full py-2.5 text-sm font-bold transition-all", type === 'receivable' ? "bg-white dark:bg-[#1a2622] text-[#24483c] dark:text-[#e4e9e7] shadow-sm" : "text-[#768980] dark:text-[#88a096] hover:text-emerald-600 dark:text-emerald-500")}
                   >
                     Owed to Me
                   </button>
@@ -175,7 +175,7 @@ function LoanModal({ isOpen, onClose, onSave, onUpdate, editingLoan, defaultType
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="mt-4 flex items-center justify-center gap-2 rounded-full bg-[#347d68] py-4 text-base font-bold text-white shadow-lg shadow-[#347d68]/20 hover:bg-[#2a6855] hover:shadow-xl transition-all disabled:opacity-70"
+                  className="mt-4 flex items-center justify-center gap-2 rounded-full bg-emerald-600 py-4 text-base font-bold text-white shadow-lg shadow-[#347d68]/20 hover:bg-[#2a6855] hover:shadow-xl transition-all disabled:opacity-70"
                 >
                   {isSaving ? <Loader2 size={20} className="animate-spin" /> : (editingLoan ? 'Update Loan' : 'Save Loan')}
                 </button>
@@ -214,7 +214,7 @@ export default function LoanTracker() {
           <div>
             <p className="text-sm text-slate-400 mb-1">Manage your payables</p>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#294d40] dark:text-white">
-              Loan <span className="text-[#d78967]">Tracker.</span>
+              Loan <span className="text-emerald-600 dark:text-emerald-500">Tracker.</span>
             </h1>
           </div>
           <button
@@ -222,7 +222,7 @@ export default function LoanTracker() {
               setEditingLoan(null);
               setIsModalOpen(true);
             }}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-[#347d68] text-white shadow-lg shadow-[#347d68]/20 hover:bg-[#2a6855] hover:scale-105 transition-all"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg shadow-[#347d68]/20 hover:bg-[#2a6855] hover:scale-105 transition-all"
             aria-label="Add Loan"
           >
             <Plus size={24} />
@@ -233,7 +233,7 @@ export default function LoanTracker() {
           <div className="flex-1 relative z-10">
             <button
               onClick={() => setActiveTab('payable')}
-              className={cn("w-full rounded-full py-3 text-sm font-bold transition-colors", activeTab === 'payable' ? "text-[#24483c] dark:text-[#e4e9e7]" : "text-[#768980] dark:text-[#88a096] hover:text-[#347d68]")}
+              className={cn("w-full rounded-full py-3 text-sm font-bold transition-colors", activeTab === 'payable' ? "text-[#24483c] dark:text-[#e4e9e7]" : "text-[#768980] dark:text-[#88a096] hover:text-emerald-600 dark:text-emerald-500")}
             >
               Money I Owe
             </button>
@@ -241,7 +241,7 @@ export default function LoanTracker() {
           <div className="flex-1 relative z-10">
             <button
               onClick={() => setActiveTab('receivable')}
-              className={cn("w-full rounded-full py-3 text-sm font-bold transition-colors", activeTab === 'receivable' ? "text-[#24483c] dark:text-[#e4e9e7]" : "text-[#768980] dark:text-[#88a096] hover:text-[#347d68]")}
+              className={cn("w-full rounded-full py-3 text-sm font-bold transition-colors", activeTab === 'receivable' ? "text-[#24483c] dark:text-[#e4e9e7]" : "text-[#768980] dark:text-[#88a096] hover:text-emerald-600 dark:text-emerald-500")}
             >
               Money Owed to Me
             </button>
@@ -266,14 +266,14 @@ export default function LoanTracker() {
               <p className="text-sm font-semibold text-[#768980] dark:text-[#88a096] uppercase tracking-wider mb-1">
                 Total {activeTab === 'payable' ? 'Payables' : 'Receivables'} (Pending)
               </p>
-              <div className="text-[48px] font-bold tracking-tight text-[#24483c] dark:text-[#e4e9e7] leading-none">
+              <div className="text-[48px] font-bold tracking-tight text-[#24483c] dark:text-emerald-500 leading-none">
                 ${totalAmount.toFixed(2)}
               </div>
             </div>
 
             {isLoading ? (
               <div className="flex justify-center py-20">
-                <Loader2 size={32} className="animate-spin text-[#347d68]" />
+                <Loader2 size={32} className="animate-spin text-emerald-600 dark:text-emerald-500" />
               </div>
             ) : (
               <div className="space-y-4">
@@ -302,7 +302,7 @@ export default function LoanTracker() {
                           "text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full transition-colors",
                           loan.status === 'settled' 
                             ? "bg-[#edf1e8] dark:bg-[#253630] text-[#768980] dark:text-[#88a096] hover:bg-[#e6ebe3] dark:bg-[#2c3f38]" 
-                            : "bg-[#e2f1eb] text-[#347d68] hover:bg-[#d1e9de]"
+                            : "bg-[#e2f1eb] text-emerald-600 dark:text-emerald-500 hover:bg-[#d1e9de]"
                         )}
                       >
                         {loan.status}
@@ -317,7 +317,7 @@ export default function LoanTracker() {
                   </div>
                   
                   <div className="flex items-center gap-4">
-                    <div className={cn("text-[20px] font-bold", activeTab === 'payable' ? "text-[#d78967]" : "text-[#347d68]", loan.status === 'settled' && "text-[#93a097] dark:text-[#7b9087]")}>
+                    <div className={cn("text-[20px] font-bold", activeTab === 'payable' ? "text-emerald-600 dark:text-emerald-500" : "text-emerald-600 dark:text-emerald-500", loan.status === 'settled' && "text-[#93a097] dark:text-[#7b9087]")}>
                       ${loan.amount.toFixed(2)}
                     </div>
                     
@@ -327,7 +327,7 @@ export default function LoanTracker() {
                           setEditingLoan(loan);
                           setIsModalOpen(true);
                         }}
-                        className="p-2 text-[#93a097] dark:text-[#7b9087] hover:bg-[#edf1e8] dark:hover:bg-[#344a42] dark:bg-[#253630] hover:text-[#347d68] rounded-full transition-colors"
+                        className="p-2 text-[#93a097] dark:text-[#7b9087] hover:bg-[#edf1e8] dark:hover:bg-[#344a42] dark:bg-[#253630] hover:text-emerald-600 dark:text-emerald-500 rounded-full transition-colors"
                         aria-label="Edit loan"
                       >
                         <Pencil size={16} />

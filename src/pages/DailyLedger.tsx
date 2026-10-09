@@ -511,16 +511,16 @@ export default function DailyLedger() {
   }
   const balanceTone = remaining < 0 || rawUsage > 90 ? 'over' : rawUsage >= 70 ? 'careful' : 'steady';
   const chartTip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => (
-    active && payload?.length ? <div className="rounded-xl border border-[#dce5dc] bg-[#fffdf8] px-3 py-2 text-xs shadow-lg">
-      <div className="mb-1 text-[#7a8980]">{label}</div><strong className="text-[#24483c]">{fmtMoney(payload[0].value)}</strong>
+    active && payload?.length ? <div className="rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-[#1C1C1E] px-3 py-2 text-xs shadow-lg text-zinc-900 dark:text-[#F5F5F7]">
+      <div className="mb-1 text-[#7a8980]">{label}</div><strong className="text-[#24483c] dark:text-emerald-500">{fmtMoney(payload[0].value)}</strong>
     </div> : null
   );
   const yearlyChartTip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color?: string }>; label?: string }) => (
-    active && payload?.length ? <div className="rounded-xl border border-[#dce5dc] bg-[#fffdf8] px-3 py-2 text-xs shadow-lg">
-      <div className="mb-2 font-semibold text-[#7a8980]">{label}</div>
+    active && payload?.length ? <div className="rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-[#1C1C1E] px-3 py-2 text-xs shadow-lg text-zinc-900 dark:text-[#F5F5F7]">
+      <div className="mb-2 font-semibold text-[#7a8980] dark:text-zinc-400">{label}</div>
       {payload.map((item) => <div key={item.name} className="flex items-center justify-between gap-4">
         <span className="flex items-center gap-1.5 text-[#62796d]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span>
-        <strong className="text-[#24483c]">{fmtMoney(item.value)}</strong>
+        <strong className="text-[#24483c] dark:text-emerald-500">{fmtMoney(item.value)}</strong>
       </div>)}
     </div> : null
   );
@@ -530,21 +530,21 @@ export default function DailyLedger() {
   const formContent = (
     <form onSubmit={submitExpense} noValidate className="space-y-3">
       <div className="grid grid-cols-[1fr_1.05fr] gap-3">
-        <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">Amount</span><div className={`flex h-11 items-center rounded-xl border ${amountError ? 'border-[#b8584b]' : 'border-[#dce5dc] dark:border-[#384f46] focus-within:border-[#84a998]'} bg-[#fffdf8] dark:bg-[#1e2a26]/75 px-3`}><span className={`mr-2 text-sm font-semibold ${amountError ? 'text-[#b8584b]' : 'text-[#779284]'}`}>৳</span><input aria-label="Amount in BDT" data-testid="input-expense-amount" type="number" min="0.01" step="0.01" value={amount} onChange={(event) => { setAmount(event.target.value); if (amountError) setAmountError(false); }} placeholder="0.00" className={`w-full bg-transparent text-sm font-semibold ${amountError ? 'text-[#b8584b]' : 'text-[#315548] dark:text-[#d1dbd6]'} outline-none placeholder:font-normal placeholder:text-[#b7c0b9]`} /></div>
+        <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-emerald-500">Amount</span><div className={`flex h-11 items-center rounded-xl border ${amountError ? 'border-[#b8584b]' : 'border-zinc-200 dark:border-white/10 focus-within:border-[#84a998]'} bg-zinc-50 dark:bg-[#09090b] px-3`}><span className={`mr-2 text-sm font-semibold ${amountError ? 'text-[#b8584b]' : 'text-[#779284]'}`}>৳</span><input aria-label="Amount in BDT" data-testid="input-expense-amount" type="number" min="0.01" step="0.01" value={amount} onChange={(event) => { setAmount(event.target.value); if (amountError) setAmountError(false); }} placeholder="0.00" className={`w-full bg-transparent text-sm font-semibold ${amountError ? 'text-[#b8584b]' : 'text-[#315548] dark:text-emerald-500'} outline-none placeholder:font-normal placeholder:text-[#b7c0b9]`} /></div>
         {amountError && <p className="text-sm text-red-500 mt-1 ml-1">Please enter a valid number.</p>}
         </label>
-        <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">Date</span><input aria-label="Expense date" data-testid="input-expense-date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} className="h-11 w-full rounded-xl border border-[#dce5dc] dark:border-[#384f46] bg-[#fffdf8] dark:bg-[#1e2a26]/75 px-3 text-xs text-[#4d6c5e] dark:text-[#aabcb3]" /></label>
+        <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">Date</span><input aria-label="Expense date" data-testid="input-expense-date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} className="h-11 w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-[#09090b] px-3 text-xs text-zinc-900 dark:text-[#F5F5F7]" /></label>
       </div>
       {!customCategoryMode ? <div>
-        <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">Where it belongs</span><span className="relative block"><motion.select {...bounce} aria-label="Expense category" data-testid="select-expense-category" value={category} onChange={(event) => setCategory(event.target.value)} required className="h-11 w-full rounded-xl border border-[#dce5dc] dark:border-[#384f46] bg-[#fffdf8] dark:bg-[#1e2a26]/75 px-3 text-sm text-[#4d6c5e] dark:text-[#aabcb3] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent">{categories.length === 0 ? <option value="" disabled>No categories available</option> : categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
-        <motion.button {...bounce} type="button" data-testid="button-add-custom-category" onClick={() => { setCustomName(''); setCustomCategoryMode(true); }} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-[#347d68] hover:bg-[#edf2e9] dark:hover:bg-[#344a42] dark:bg-[#253630]"><Plus size={14} />Add a custom category</motion.button>
-      </div> : <div className="rounded-xl border border-[#dce5dc] dark:border-[#384f46] bg-[#fffdf8] dark:bg-[#1e2a26]/50 p-3">
-        <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">New “Where it belongs” category</span><input aria-label="Custom category name" data-testid="input-custom-category" maxLength={40} required autoFocus value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="For example, Books or Gifts" className="h-11 w-full rounded-xl border border-[#dce5dc] dark:border-[#384f46] bg-[#fffdf8] dark:bg-[#1e2a26]/75 px-3 text-sm text-[#4d6c5e] dark:text-[#aabcb3] placeholder:text-[#a6b1a9] dark:text-[#6a7f76]" /></label>
+        <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">Where it belongs</span><span className="relative block"><motion.select {...bounce} aria-label="Expense category" data-testid="select-expense-category" value={category} onChange={(event) => setCategory(event.target.value)} required className="h-11 w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-[#09090b] px-3 text-sm text-zinc-900 dark:text-[#F5F5F7] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent">{categories.length === 0 ? <option value="" disabled>No categories available</option> : categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
+        <motion.button {...bounce} type="button" data-testid="button-add-custom-category" onClick={() => { setCustomName(''); setCustomCategoryMode(true); }} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-emerald-600 dark:text-emerald-500 hover:bg-[#edf2e9] dark:hover:bg-[#344a42] dark:bg-[#253630]"><Plus size={14} />Add a custom category</motion.button>
+      </div> : <div className="rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-[#1e2a26]/50 p-3">
+        <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">New “Where it belongs” category</span><input aria-label="Custom category name" data-testid="input-custom-category" maxLength={40} required autoFocus value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="For example, Books or Gifts" className="h-11 w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-[#09090b] px-3 text-sm text-zinc-900 dark:text-[#F5F5F7] placeholder:text-[#a6b1a9] dark:text-[#6a7f76]" /></label>
         <div className="mt-2 flex items-center justify-between gap-2"><p className="text-[10px] text-[#87968c]">Saved when you add this expense.</p><motion.button {...bounce} type="button" data-testid="button-use-existing-category" onClick={() => { setCustomCategoryMode(false); setCustomName(''); }} className="rounded-lg px-2 py-1 text-[11px] font-semibold text-[#628675] hover:bg-[#edf2e9] dark:hover:bg-[#344a42] dark:bg-[#253630]">Choose existing</motion.button></div>
       </div>}
-      <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">Tags <span className="font-normal">(optional, separate with commas or spaces)</span></span><input aria-label="Custom expense tags" data-testid="input-expense-tags" maxLength={240} value={tagInput} onChange={(event) => setTagInput(event.target.value)} placeholder="#iCloud, #CapCut, #Uber" className="h-11 w-full rounded-xl border border-[#dce5dc] dark:border-[#384f46] bg-[#fffdf8] dark:bg-[#1e2a26]/75 px-3 text-sm text-[#4d6c5e] dark:text-[#aabcb3] placeholder:text-[#a6b1a9] dark:text-[#6a7f76]" /></label>
-      <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">A note <span className="font-normal">(optional)</span></span><input aria-label="Optional note" data-testid="input-expense-note" maxLength={80} value={note} onChange={(event) => setNote(event.target.value)} placeholder="A quick detail to remember" className="h-11 w-full rounded-xl border border-[#dce5dc] dark:border-[#384f46] bg-[#fffdf8] dark:bg-[#1e2a26]/75 px-3 text-sm text-[#4d6c5e] dark:text-[#aabcb3] placeholder:text-[#a6b1a9] dark:text-[#6a7f76]" /></label>
-      <motion.button {...bounce} type="submit" data-testid="button-save-expense" className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#347d68] text-sm font-semibold text-white shadow-sm hover:bg-[#2d705d]">{editingId ? <Check size={16} /> : <Plus size={17} />}{editingId ? 'Save changes' : 'Add to my ledger'}</motion.button>
+      <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">Tags <span className="font-normal">(optional, separate with commas or spaces)</span></span><input aria-label="Custom expense tags" data-testid="input-expense-tags" maxLength={240} value={tagInput} onChange={(event) => setTagInput(event.target.value)} placeholder="#iCloud, #CapCut, #Uber" className="h-11 w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-[#09090b] px-3 text-sm text-zinc-900 dark:text-[#F5F5F7] placeholder:text-[#a6b1a9] dark:text-[#6a7f76]" /></label>
+      <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">A note <span className="font-normal">(optional)</span></span><input aria-label="Optional note" data-testid="input-expense-note" maxLength={80} value={note} onChange={(event) => setNote(event.target.value)} placeholder="A quick detail to remember" className="h-11 w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-[#09090b] px-3 text-sm text-zinc-900 dark:text-[#F5F5F7] placeholder:text-[#a6b1a9] dark:text-[#6a7f76]" /></label>
+      <motion.button {...bounce} type="submit" data-testid="button-save-expense" className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 dark:hover:bg-emerald-500">{editingId ? <Check size={16} /> : <Plus size={17} />}{editingId ? 'Save changes' : 'Add to my ledger'}</motion.button>
     </form>
   );
 
@@ -552,7 +552,7 @@ export default function DailyLedger() {
     <AnimatePresence>{editingId && (
       <div key="modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <motion.div {...overlayFade} className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={clearForm}></motion.div>
-        <motion.div {...modalPop} className="relative glass-card max-w-lg w-full rounded-[28px] border border-white/80 dark:border-white/10 p-6 sm:p-8 bg-white/95 max-h-[90vh] overflow-y-auto z-10 shadow-2xl">
+        <motion.div {...modalPop} className="relative bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm max-w-lg w-full rounded-[28px] border border-white/80 dark:border-white/10 p-6 sm:p-8 bg-white dark:bg-[#0a0a0a] max-h-[90vh] overflow-y-auto z-10 shadow-2xl">
           <div className="mb-5 flex items-start justify-between">
             <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Make a change</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Edit expense</h2></div>
             <motion.button {...bounce} type="button" aria-label="Cancel edit" data-testid="button-cancel-edit" onClick={clearForm} className="grid h-8 w-8 place-items-center rounded-full text-[#768980] dark:text-[#88a096] hover:bg-[#edf1e8] dark:hover:bg-[#344a42] dark:bg-[#253630]"><X size={17} /></motion.button>
@@ -564,16 +564,16 @@ export default function DailyLedger() {
   );
 
   return (
-    <main className="money-page min-h-[100dvh] px-4 pb-12 pt-5 sm:px-7 lg:px-10">
+    <main className="bg-[#F5F5F7] dark:bg-black text-zinc-900 dark:text-[#F5F5F7] min-h-screen px-4 pb-12 pt-5 sm:px-7 lg:px-10">
       <div className="mx-auto max-w-[1180px]">
         {/* Header removed, now using global TopNav */}
 
         <section className="rise-in mb-5 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="mb-2 text-sm font-medium text-[#789086]">A little more clarity, every day.</p>
-            <h1 className="font-display text-[32px] font-bold leading-tight tracking-[-.055em] text-[#24483c] sm:text-[42px]">{activeTab === 'daily' ? <>Your money, <span className="text-[#d78967]">today.</span></> : activeTab === 'monthly' ? <>Your money, <span className="text-[#d78967]">this month.</span></> : <>A year in <span className="text-[#d78967]">perspective.</span></>}</h1>
+            <h1 className="font-display text-[32px] font-extrabold leading-tight tracking-[-.055em] text-zinc-900 dark:text-[#F5F5F7] sm:text-[42px]">{activeTab === 'daily' ? <>Your money, <span className="text-emerald-600 dark:text-emerald-500">today.</span></> : activeTab === 'monthly' ? <>Your money, <span className="text-emerald-600 dark:text-emerald-500">this month.</span></> : <>A year in <span className="text-emerald-600 dark:text-emerald-500">perspective.</span></>}</h1>
           </div>
-          {activeTab === 'daily' ? null : activeTab === 'monthly' ? <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[#dce5dc] bg-[#fbfaf5]/80 p-2 sm:w-auto">
+          {activeTab === 'daily' ? null : activeTab === 'monthly' ? <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white shadow-sm border border-zinc-100 dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none p-2 sm:w-auto">
             <motion.button {...bounce} type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month" data-testid="button-previous-month" className="grid h-9 w-9 place-items-center rounded-xl text-[#597369] hover:bg-[#edf2e9]"><ArrowLeft size={16} /></motion.button>
             <label className="flex min-w-[160px] flex-1 items-center justify-center gap-2 px-1 text-sm font-semibold text-[#355a4d] sm:flex-none">
               <CalendarDays size={16} className="text-[#789086]" />
@@ -585,7 +585,7 @@ export default function DailyLedger() {
               }} className="w-[145px] cursor-pointer bg-transparent text-center text-sm font-semibold text-[#355a4d]" />
             </label>
             <motion.button {...bounce} type="button" onClick={() => shiftMonth(1)} aria-label="Next month" data-testid="button-next-month" className="grid h-9 w-9 place-items-center rounded-xl text-[#597369] hover:bg-[#edf2e9]"><ArrowRight size={16} /></motion.button>
-          </div> : <label className="flex items-center gap-2 rounded-2xl border border-[#dce5dc] bg-[#fbfaf5]/80 px-4 py-3 text-sm font-semibold text-[#355a4d]">
+          </div> : <label className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white shadow-sm border border-zinc-100 dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none px-4 py-3 text-sm font-semibold text-[#355a4d]">
             <CalendarDays size={16} className="text-[#789086]" />
             <span>Year</span>
             <span className="relative inline-flex items-center"><motion.select {...bounce} aria-label="Analytics year" data-testid="select-analytics-year" value={selectedYear} onChange={(event) => setSelectedYear(Number(event.target.value))} className="cursor-pointer bg-transparent text-sm font-semibold text-[#355a4d] appearance-none pr-10 transition-colors focus:outline-none focus:ring-0 focus:border-transparent">
@@ -594,7 +594,7 @@ export default function DailyLedger() {
           </label>}
         </section>
 
-        <nav aria-label="Ledger views" className="sticky top-0 z-10 mb-5 flex rounded-2xl border border-[#dce5dc] dark:border-[#384f46] bg-[#f3f4ed]/95 dark:bg-[#1d2a25]/95 backdrop-blur-md shadow-sm p-1">
+        <nav aria-label="Ledger views" className="sticky top-0 z-10 mb-5 flex rounded-2xl border border-zinc-200 dark:border-white/10 bg-[#F5F5F7] dark:bg-black/95 dark:bg-[#1d2a25]/95 backdrop-blur-md shadow-sm p-1">
           <motion.button {...bounce} type="button" aria-current={activeTab === 'daily' ? 'page' : undefined} data-testid="tab-daily-ledger" onClick={() => setActiveTab('daily')} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${activeTab === 'daily' ? 'bg-white dark:bg-[#1a2622] text-[#315548] dark:text-[#d1dbd6] shadow-sm' : 'text-[#819087] dark:text-[#88a096] hover:text-[#355a4d] dark:text-[#d1dbd6]'}`}><CalendarDays size={16} />Daily Ledger</motion.button>
           <motion.button {...bounce} type="button" aria-current={activeTab === 'monthly' ? 'page' : undefined} data-testid="tab-monthly-ledger" onClick={() => setActiveTab('monthly')} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${activeTab === 'monthly' ? 'bg-white dark:bg-[#1a2622] text-[#315548] dark:text-[#d1dbd6] shadow-sm' : 'text-[#819087] dark:text-[#88a096] hover:text-[#355a4d] dark:text-[#d1dbd6]'}`}><CalendarDays size={16} />Monthly Ledger</motion.button>
           <motion.button {...bounce} type="button" aria-current={activeTab === 'yearly' ? 'page' : undefined} data-testid="tab-yearly-overview" onClick={() => setActiveTab('yearly')} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${activeTab === 'yearly' ? 'bg-white dark:bg-[#1a2622] text-[#315548] dark:text-[#d1dbd6] shadow-sm' : 'text-[#819087] dark:text-[#88a096] hover:text-[#355a4d] dark:text-[#d1dbd6]'}`}><BarChart3 size={16} />Yearly Overview</motion.button>
@@ -602,17 +602,17 @@ export default function DailyLedger() {
 
         
         {activeTab === 'daily' ? <>
-        <section className="rise-in-delay glass-card relative mb-5 overflow-hidden rounded-[26px] p-5 sm:p-7">
+        <section className="rise-in-delay bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm relative mb-5 overflow-hidden rounded-[26px] p-5 sm:p-7">
           <div className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rounded-full border-[1px] border-[#dbe7d8]/80 dark:border-[#2a3c35]/80" />
           <div className="pointer-events-none absolute -right-2 -top-10 h-44 w-44 rounded-full border-[1px] border-[#e6ebe0] dark:border-[#2a3c35]" />
           <div className="relative">
-            <div className="rounded-[20px] border border-white/70 dark:border-white/10 bg-white/35 p-4 sm:p-5">
+            <div className="rounded-[20px] border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#1C1C1E] p-4 sm:p-5">
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#446558] dark:text-[#aabcb3]">Your day at a glance</span>
-                <span data-testid="text-today-usage" className={`rounded-full px-2.5 py-1 text-xs font-semibold ${todayBalanceTone === 'over' ? 'bg-[#fae5df] dark:bg-[#3a221f] text-[#a7463c]' : todayBalanceTone === 'careful' ? 'bg-[#f6edcf] dark:bg-[#3a331c] text-[#927629]' : 'bg-[#e1eee2] dark:bg-[#1c382a] text-[#39795e]'}`}>{todayUsage}% used</span>
+                <span className="text-sm font-semibold text-[#446558] dark:text-[#F5F5F7]">Your day at a glance</span>
+                <span data-testid="text-today-usage" className={`rounded-full px-2.5 py-1 text-xs font-semibold ${todayBalanceTone === 'over' ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-500 dark:border dark:border-red-500/20' : todayBalanceTone === 'careful' ? 'bg-[#f6edcf] dark:bg-[#3a331c] text-[#927629]' : 'bg-zinc-100 text-zinc-600 dark:bg-emerald-500/10 dark:text-emerald-500 dark:border dark:border-emerald-500/20'}`}>{todayUsage}% used</span>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-[#e6ebe3] dark:bg-[#2c3f38]">
-                <div data-testid="progress-today" className={`h-full rounded-full transition-[width] duration-500 ${todayBalanceTone === 'over' ? 'bg-[#c85f51]' : todayBalanceTone === 'careful' ? 'bg-[#d9b74f]' : 'bg-[#65a17d]'}`} style={{ width: `${todayUsage}%` }} />
+              <div className="h-3 overflow-hidden rounded-full bg-zinc-100 dark:bg-white/10">
+                <div data-testid="progress-today" className="h-full rounded-full transition-[width] duration-500 bg-emerald-600 dark:bg-emerald-500" style={{ width: `${todayUsage}%` }} />
               </div>
               <div className="mt-2 flex justify-between text-[11px] text-[#8a9990] dark:text-[#88a096]"><span>৳0</span><span>{todayRemainingMonthlyPool < 0 ? `${fmtMoney(Math.abs(todayRemainingMonthlyPool))} over pool` : `${fmtMoney(todayRemainingMonthlyPool)} remaining this month`}</span><span>{fmtMoney(startOfDayBudget)}</span></div>
               <p className="mt-4 flex items-center gap-2 text-xs leading-relaxed text-[#71857a] dark:text-[#88a096]">
@@ -623,32 +623,32 @@ export default function DailyLedger() {
           </div>
         </section>
 
-        <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6" data-testid="daily-detail-panel">
+        <section className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm mb-5 rounded-[24px] p-5 sm:p-6" data-testid="daily-detail-panel">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
             <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Daily detail</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40] dark:text-[#e4e9e7]">{new Date(`${today}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</h2></div>
-            <span className="rounded-full bg-[#edf2e9] dark:bg-[#253630] px-3 py-1 text-xs font-semibold text-[#628675]">{todayExpenses.length} {todayExpenses.length === 1 ? 'entry' : 'entries'}</span>
+            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600 dark:bg-emerald-500/10 dark:text-emerald-500 dark:border dark:border-emerald-500/20">{todayExpenses.length} {todayExpenses.length === 1 ? 'entry' : 'entries'}</span>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl bg-[#f4f5ef] dark:bg-[#23312c]/80 p-4"><p className="text-xs text-[#819087] dark:text-[#88a096]">Available Budget</p><p data-testid="text-detail-daily-income" className="mt-1 font-display text-xl font-bold text-[#355a4d] dark:text-[#d1dbd6]">{fmtMoney(remaining)}</p></div>
-            <div className="rounded-2xl bg-[#f4f5ef] dark:bg-[#23312c]/80 p-4"><p className="text-xs text-[#819087] dark:text-[#88a096]">Total spent today</p><p data-testid="text-detail-daily-spent" className="mt-1 font-display text-xl font-bold text-[#355a4d] dark:text-[#d1dbd6]">{fmtMoney(todaySpent)}</p></div>
-            <div className="rounded-2xl bg-[#f4f5ef] dark:bg-[#23312c]/80 p-4"><p className="text-xs text-[#819087] dark:text-[#88a096]">Total Loan Due</p><p data-testid="text-detail-daily-savings" className="mt-1 font-display text-xl font-bold text-[#b8584b]">{fmtMoney(totalLoanDue)}</p></div>
+            <div className="rounded-2xl bg-white shadow-sm border-zinc-100 dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none p-4"><p className="text-xs text-[#819087] dark:text-[#88a096]">Available Budget</p><p data-testid="text-detail-daily-income" className="mt-1 font-display text-xl font-bold text-zinc-900 dark:text-emerald-500">{fmtMoney(remaining)}</p></div>
+            <div className="rounded-2xl bg-white shadow-sm border-zinc-100 dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none p-4"><p className="text-xs text-[#819087] dark:text-[#88a096]">Total spent today</p><p data-testid="text-detail-daily-spent" className="mt-1 font-display text-xl font-bold text-zinc-900 dark:text-emerald-500">{fmtMoney(todaySpent)}</p></div>
+            <div className="rounded-2xl bg-white shadow-sm border-zinc-100 dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none p-4"><p className="text-xs text-[#819087] dark:text-[#88a096]">Total Loan Due</p><p data-testid="text-detail-daily-savings" className="mt-1 font-display text-xl font-bold text-[#b8584b]">{fmtMoney(totalLoanDue)}</p></div>
           </div>
         </section>
 
         <div className="mb-5 grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
-          <section id="expense-entry-daily" className="glass-card rounded-[24px] p-5 sm:p-6">
+          <section id="expense-entry-daily" className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm rounded-[24px] p-5 sm:p-6">
             <div className="mb-5 flex items-start justify-between">
               <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">A small note to self</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40] dark:text-[#e4e9e7]">What did you spend today?</h2></div>
             </div>
             {formContent}
           </section>
-          <section className="glass-card rounded-[24px] p-5 sm:p-6">
-            <div className="mb-4 flex items-end justify-between"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The shape of your spending</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40] dark:text-[#e4e9e7]">Where it went today</h2></div><span className="text-xs text-[#8a9990] dark:text-[#88a096]">{todayExpenses.length} {todayExpenses.length === 1 ? 'entry' : 'entries'}</span></div>
+          <section className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm rounded-[24px] p-5 sm:p-6">
+            <div className="mb-4 flex items-end justify-between"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The shape of your spending</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40] dark:text-[#e4e9e7]">Where it went today</h2></div><span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600 dark:bg-emerald-500/10 dark:text-emerald-500 dark:border dark:border-emerald-500/20">{todayExpenses.length} {todayExpenses.length === 1 ? 'entry' : 'entries'}</span></div>
             {todayPieData.length ? <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center w-full">
               <div className="col-span-1 flex justify-center">
                 <div className="relative h-[190px] w-[190px]">
                   <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={todayPieData} dataKey="value" nameKey="name" innerRadius={58} outerRadius={82} paddingAngle={3} stroke="none" cornerRadius={4}>{todayPieData.map((entry) => <Cell key={entry.name} fill={colorForCategory(entry.name, categories)} />)}</Pie><ChartTooltip content={chartTip} /></PieChart></ResponsiveContainer>
-                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"><strong data-testid="text-category-spend-total" className="font-display text-[19px] font-bold text-[#315548] dark:text-[#d1dbd6]">{fmtMoney(todaySpent)}</strong><span className="text-[10px] text-[#8a9990] dark:text-[#88a096]">total spent</span></div>
+                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"><strong data-testid="text-category-spend-total" className="font-display text-[19px] font-bold text-zinc-900 dark:text-emerald-500">{fmtMoney(todaySpent)}</strong><span className="text-[10px] text-[#8a9990] dark:text-[#88a096]">total spent</span></div>
                 </div>
               </div>
               <div className="col-span-1 w-full space-y-3">
@@ -659,7 +659,7 @@ export default function DailyLedger() {
                       {colorPickerTarget === `pie-${item.name}` && (
                         <>
                           <div className="fixed inset-0 z-40" onClick={() => setColorPickerTarget(null)} />
-                          <div className="absolute top-full left-0 mt-2 z-50 w-48 rounded-xl bg-white dark:bg-[#1a2622] p-3 shadow-xl border border-[#dce5dc] dark:border-[#384f46]">
+                          <div className="absolute top-full left-0 mt-2 z-50 w-48 rounded-xl bg-white dark:bg-[#1a2622] p-3 shadow-xl border border-zinc-200 dark:border-white/10">
                              <div className="flex flex-wrap gap-2 mb-3">
                                {PREDEFINED_COLORS.map(c => (
                                  <motion.button {...bounce} type="button" aria-label={`Select color ${c}`} key={c} onClick={() => { changeCategoryColor(item.name, c); setColorPickerTarget(null); }} className="h-6 w-6 rounded-full hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: c }} />
@@ -672,41 +672,41 @@ export default function DailyLedger() {
                           </div>
                         </>
                       )}
-                      <span className="truncate text-xs text-[#62796d] dark:text-[#aabcb3]">{item.name}</span>
+                      <span className="truncate text-xs text-[#62796d] dark:text-[#F5F5F7]">{item.name}</span>
                     </div>
-                    <span data-testid={`text-donut-amount-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="shrink-0 text-xs font-semibold text-[#355a4d] dark:text-[#d1dbd6]">{fmtMoney(item.value)}</span>
+                    <span data-testid={`text-donut-amount-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="shrink-0 text-xs font-semibold text-[#355a4d] dark:text-emerald-500">{fmtMoney(item.value)}</span>
                   </div>
                 ))}
               </div>
-            </div> : <div className="flex min-h-[190px] flex-col items-center justify-center rounded-2xl bg-[#f4f4ec] dark:bg-[#121b18]/70 text-center"><div className="mb-3 grid h-11 w-11 place-items-center rounded-full bg-[#e7eee4] dark:bg-[#2c3f38] text-[#668b75] dark:text-[#88a096]"><Wallet size={19} /></div><p className="text-sm font-semibold text-[#547165] dark:text-[#aabcb3]">Nothing spent just yet</p><p className="mt-1 max-w-[220px] text-xs leading-relaxed text-[#8a9990] dark:text-[#88a096]">Your categories will take shape here as you add expenses.</p></div>}
+            </div> : <div className="flex min-h-[190px] flex-col items-center justify-center rounded-2xl bg-zinc-100/50 dark:bg-[#1C1C1E] dark:border dark:border-white/10 text-center"><div className="mb-3 grid h-11 w-11 place-items-center rounded-full bg-[#e7eee4] dark:bg-[#2c3f38] text-[#668b75] dark:text-[#88a096]"><Wallet size={19} /></div><p className="text-sm font-semibold text-[#547165] dark:text-[#F5F5F7]">Nothing spent just yet</p><p className="mt-1 max-w-[220px] text-xs leading-relaxed text-[#8a9990] dark:text-[#88a096]">Your categories will take shape here as you add expenses.</p></div>}
           </section>
         </div>
 
-        <section className="glass-card rounded-[24px] p-5 sm:p-6">
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The little details</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40] dark:text-[#e4e9e7]">Your ledger today</h2></div><motion.button {...bounce} type="button" onClick={exportCsv} data-testid="button-export-csv" className="flex h-9 items-center gap-2 rounded-xl border border-[#dce5dc] dark:border-[#384f46] bg-[#fffdf8] dark:bg-[#1e2a26]/70 px-3 text-xs font-semibold text-[#537364] dark:text-[#aabcb3] hover:bg-[#edf2e9] dark:hover:bg-[#344a42] dark:bg-[#253630]"><Download size={14} />Download CSV</motion.button></div>
+        <section className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm rounded-[24px] p-5 sm:p-6">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The little details</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40] dark:text-[#e4e9e7]">Your ledger today</h2></div><motion.button {...bounce} type="button" onClick={exportCsv} data-testid="button-export-csv" className="flex h-9 items-center gap-2 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-[#1e2a26]/70 px-3 text-xs font-semibold text-[#537364] dark:text-[#F5F5F7] hover:bg-[#edf2e9] dark:hover:bg-[#344a42] dark:bg-[#253630]"><Download size={14} />Download CSV</motion.button></div>
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
-            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">Filter by category</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by category" data-testid="select-filter-category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] dark:border-[#384f46] bg-[#fffdf8] dark:bg-[#1e2a26]/75 px-3 text-xs text-[#4d6c5e] dark:text-[#aabcb3] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent"><option value="all">All categories</option>{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
-            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">Filter by tag</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by tag" data-testid="select-filter-tag" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] dark:border-[#384f46] bg-[#fffdf8] dark:bg-[#1e2a26]/75 px-3 text-xs text-[#4d6c5e] dark:text-[#aabcb3] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent"><option value="all">All tags</option>{availableTags.map((item) => <option key={item} value={item}>#{item}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
+            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">Filter by category</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by category" data-testid="select-filter-category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-10 w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-[#09090b] px-3 text-xs text-zinc-900 dark:text-[#F5F5F7] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent"><option value="all">All categories</option>{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
+            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087] dark:text-[#88a096]">Filter by tag</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by tag" data-testid="select-filter-tag" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="h-10 w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-[#09090b] px-3 text-xs text-zinc-900 dark:text-[#F5F5F7] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent"><option value="all">All tags</option>{availableTags.map((item) => <option key={item} value={item}>#{item}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
           </div>
           {todayExpenses.length ? todayFilteredExpenses.length ? <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-left">
               <thead><tr className="border-b border-[#e6ebe3] dark:border-[#2a3c35] text-[10px] font-semibold uppercase tracking-[.1em] text-[#95a198] dark:text-[#88a096]"><th className="pb-3 pr-3 font-semibold">Date</th><th className="pb-3 pr-3 font-semibold">Category</th><th className="pb-3 pr-3 font-semibold">Tags</th><th className="pb-3 pr-3 font-semibold">Note</th><th className="pb-3 pr-3 text-right font-semibold">Amount</th><th className="pb-3 text-right font-semibold">Edit</th></tr></thead>
               <tbody>{todayFilteredExpenses.map((item) => <tr key={item.id} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] dark:border-[#2a3c35] last:border-0 hover:bg-gray-50 dark:hover:bg-white/5">
                 <td data-testid={`text-expense-date-${item.id}`} className="py-3.5 pr-3 text-xs text-[#74877d] dark:text-[#9bb0a6]">{new Date(`${item.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td>
-                <td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-[#4d6c5e] dark:text-[#aabcb3]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td>
-                <td data-testid={`text-expense-tags-${item.id}`} className="py-3.5 pr-3"><div className="flex max-w-[170px] flex-wrap gap-1">{item.tags.map((tag) => <span key={tag} className="rounded-md bg-[#edf2e9] dark:bg-[#253630] px-1.5 py-1 text-[10px] text-[#628675] dark:text-[#aabcb3]">#{tag}</span>)}</div></td>
+                <td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-zinc-900 dark:text-[#F5F5F7]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td>
+                <td data-testid={`text-expense-tags-${item.id}`} className="py-3.5 pr-3"><div className="flex max-w-[170px] flex-wrap gap-1">{item.tags.map((tag) => <span key={tag} className="rounded-md bg-[#edf2e9] dark:bg-[#253630] px-1.5 py-1 text-[10px] text-[#628675] dark:text-[#F5F5F7]">#{tag}</span>)}</div></td>
                 <td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097] dark:text-[#7b9087]">{item.note || '—'}</td>
-                <td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d] dark:text-[#d1dbd6]">{fmtMoney(item.amount)}</td>
-                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><motion.button whileTap={{ scale: 0.9 }} transition={springTransition} type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="rounded-full p-2 text-[#789086] dark:text-[#88a096] opacity-75 transition-colors hover:bg-[#e9f0e8] hover:text-[#347d68] dark:hover:bg-[#344a42] dark:hover:text-[#aabcb3]"><Edit3 size={14} /></motion.button><motion.button whileTap={{ scale: 0.9 }} transition={springTransition} type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => setExpenseToDelete(item.id)} className="rounded-full p-2 text-[#a88e87] opacity-75 transition-colors hover:bg-[#f8e9e4] hover:text-[#ba5b4d] dark:hover:bg-[#4a2b27] dark:hover:text-[#e4a39b]"><Trash2 size={14} /></motion.button></div></td>
+                <td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d] dark:text-emerald-500">{fmtMoney(item.amount)}</td>
+                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><motion.button whileTap={{ scale: 0.9 }} transition={springTransition} type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="rounded-full p-2 text-[#789086] dark:text-[#88a096] opacity-75 transition-colors hover:bg-[#e9f0e8] hover:text-emerald-600 dark:text-emerald-500 dark:hover:bg-[#344a42] dark:hover:text-[#aabcb3]"><Edit3 size={14} /></motion.button><motion.button whileTap={{ scale: 0.9 }} transition={springTransition} type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => setExpenseToDelete(item.id)} className="rounded-full p-2 text-[#a88e87] opacity-75 transition-colors hover:bg-[#f8e9e4] hover:text-[#ba5b4d] dark:hover:bg-[#4a2b27] dark:hover:text-[#e4a39b]"><Trash2 size={14} /></motion.button></div></td>
               </tr>)}</tbody>
             </table>
-          </div> : <div className="rounded-2xl bg-[#f4f4ec] dark:bg-[#121b18]/65 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165] dark:text-[#aabcb3]">No expenses match those filters</p><p className="mt-1 text-xs text-[#8a9990] dark:text-[#88a096]">Try another category or tag.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec] dark:bg-[#121b18]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] dark:bg-[#2c3f38] text-[#638b73] dark:text-[#88a096]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c] dark:text-[#aabcb3]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c] dark:text-[#88a096]">When you spend today, leave yourself a little note here. It all stays on this device.</p></div>}
-          <div className="mt-4 flex items-center justify-between border-t border-[#e6ebe3] dark:border-[#2a3c35] pt-4 text-xs"><span className="text-[#839289] dark:text-[#88a096]">{todayExpenses.length} {todayExpenses.length === 1 ? 'entry' : 'entries'} today</span><span className="font-semibold text-[#426457] dark:text-[#aabcb3]">Day total <strong data-testid="text-ledger-total" className="ml-2 font-display text-sm text-[#24483c] dark:text-[#e4e9e7]">{fmtMoney(todaySpent)}</strong></span></div>
+          </div> : <div className="rounded-2xl bg-zinc-100/50 dark:bg-[#1C1C1E] dark:border dark:border-white/10 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165] dark:text-[#F5F5F7]">No expenses match those filters</p><p className="mt-1 text-xs text-[#8a9990] dark:text-[#88a096]">Try another category or tag.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-zinc-100/50 dark:bg-[#1C1C1E] dark:border dark:border-white/10 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] dark:bg-[#2c3f38] text-[#638b73] dark:text-[#88a096]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c] dark:text-[#F5F5F7]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c] dark:text-[#88a096]">When you spend today, leave yourself a little note here. It all stays on this device.</p></div>}
+          <div className="mt-4 flex items-center justify-between border-t border-[#e6ebe3] dark:border-[#2a3c35] pt-4 text-xs"><span className="text-[#839289] dark:text-emerald-500">{todayExpenses.length} {todayExpenses.length === 1 ? 'entry' : 'entries'} today</span><span className="font-semibold text-[#426457] dark:text-emerald-500">Day total <strong data-testid="text-ledger-total" className="ml-2 font-display text-sm text-[#24483c] dark:text-emerald-500">{fmtMoney(todaySpent)}</strong></span></div>
         </section>
         </> : activeTab === 'monthly' ? <>
 
 
-        <section className="rise-in-delay glass-card relative mb-5 overflow-hidden rounded-[26px] p-5 sm:p-7">
+        <section className="rise-in-delay bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm relative mb-5 overflow-hidden rounded-[26px] p-5 sm:p-7">
           <div className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rounded-full border-[1px] border-[#dbe7d8]/80" />
           <div className="pointer-events-none absolute -right-2 -top-10 h-44 w-44 rounded-full border-[1px] border-[#e6ebe0]" />
           <div className="relative grid gap-7 md:grid-cols-[1.15fr_.85fr] md:items-center">
@@ -714,28 +714,28 @@ export default function DailyLedger() {
               <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.12em] text-[#789086]"><span className="h-[1px] w-5 bg-[#a3b8a8]" /> Monthly income</div>
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 {editingIncome ? <form onSubmit={saveIncome} className="flex flex-wrap items-center gap-2">
-                  <span className="font-display text-2xl font-bold text-[#24483c]">৳</span>
+                  <span className="font-display text-2xl font-bold text-[#24483c] dark:text-emerald-500">৳</span>
                   <input aria-label="Monthly income in BDT" data-testid="input-monthly-income" type="number" min="0" step="0.01" required autoFocus value={incomeDraft} onChange={(event) => setIncomeDraft(event.target.value)} className="h-11 w-36 rounded-xl border border-[#cbdace] bg-white/70 px-3 text-lg font-semibold text-[#24483c] focus:outline-none focus:ring-0 focus:border-transparent" />
-                  <motion.button {...bounce} type="submit" data-testid="button-save-income" className="h-9 rounded-lg bg-[#347d68] px-3 text-xs font-semibold text-white hover:bg-[#2d705d]">Save</motion.button>
+                  <motion.button {...bounce} type="submit" data-testid="button-save-income" className="h-9 rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white hover:bg-emerald-700 dark:hover:bg-emerald-500">Save</motion.button>
                   <motion.button {...bounce} type="button" aria-label="Cancel income edit" data-testid="button-cancel-income" onClick={() => setEditingIncome(false)} className="grid h-9 w-9 place-items-center rounded-lg text-[#768980] hover:bg-[#edf1e8]"><X size={16} /></motion.button>
                 </form> : <>
-                  <div data-testid="text-monthly-allowance" className="font-display text-[43px] font-bold leading-none tracking-[-.06em] text-[#24483c] sm:text-[54px]">{fmtMoney(monthlyIncome)}</div>
+                  <div data-testid="text-monthly-allowance" className="font-display text-[43px] font-bold leading-none tracking-[-.06em] text-[#24483c] dark:text-emerald-500 sm:text-[54px]">{fmtMoney(monthlyIncome)}</div>
                   <motion.button {...bounce} type="button" aria-label="Edit monthly income" data-testid="button-edit-income" onClick={() => { setIncomeDraft(String(monthlyIncome)); setEditingIncome(true); }} className="rounded-lg px-2 py-1 text-xs font-semibold text-[#628675] hover:bg-[#edf2e9]">Edit</motion.button>
                 </>}
                 <div className="text-sm text-[#819087]">per month</div>
               </div>
               <div className="mt-7 flex flex-wrap gap-x-9 gap-y-4">
-                <div><div className="mb-1 text-xs text-[#819087]">Spent so far</div><div data-testid="text-monthly-spent" className="font-display text-[22px] font-bold tracking-[-.04em] text-[#355a4d]">{fmtMoney(spent)}</div></div>
-                <div><div className="mb-1 text-xs text-[#819087]">Still yours</div><div data-testid="text-monthly-remaining" className={`font-display text-[22px] font-bold tracking-[-.04em] ${remaining < 0 ? 'text-[#b8584b]' : 'text-[#347d68]'}`}>{remaining < 0 ? `−${fmtMoney(Math.abs(remaining))}` : fmtMoney(remaining)}</div></div>
+                <div><div className="mb-1 text-xs text-[#819087]">Spent so far</div><div data-testid="text-monthly-spent" className="font-display text-[22px] font-bold tracking-[-.04em] text-[#355a4d] dark:text-emerald-500">{fmtMoney(spent)}</div></div>
+                <div><div className="mb-1 text-xs text-[#819087]">Still yours</div><div data-testid="text-monthly-remaining" className={`font-display text-[22px] font-bold tracking-[-.04em] ${remaining < 0 ? 'text-[#b8584b]' : 'text-emerald-600 dark:text-emerald-500'}`}>{remaining < 0 ? `−${fmtMoney(Math.abs(remaining))}` : fmtMoney(remaining)}</div></div>
               </div>
             </div>
-            <div className="rounded-[20px] border border-white/70 bg-white/35 p-4 sm:p-5">
+            <div className="rounded-[20px] border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#1C1C1E] p-4 sm:p-5">
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-sm font-semibold text-[#446558]">Your month at a glance</span>
-                <span data-testid="text-allowance-usage" className={`rounded-full px-2.5 py-1 text-xs font-semibold ${balanceTone === 'over' ? 'bg-[#fae5df] text-[#a7463c]' : balanceTone === 'careful' ? 'bg-[#f6edcf] text-[#927629]' : 'bg-[#e1eee2] text-[#39795e]'}`}>{usage}% used</span>
+                <span data-testid="text-allowance-usage" className={`rounded-full px-2.5 py-1 text-xs font-semibold ${balanceTone === 'over' ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-500 dark:border dark:border-red-500/20' : balanceTone === 'careful' ? 'bg-[#f6edcf] text-[#927629]' : 'bg-zinc-100 text-zinc-600 dark:bg-emerald-500/10 dark:text-emerald-500 dark:border dark:border-emerald-500/20'}`}>{usage}% used</span>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-[#e6ebe3]">
-                <div data-testid="progress-allowance" className={`h-full rounded-full transition-[width] duration-500 ${balanceTone === 'over' ? 'bg-[#c85f51]' : balanceTone === 'careful' ? 'bg-[#d9b74f]' : 'bg-[#65a17d]'}`} style={{ width: `${usage}%` }} />
+              <div className="h-3 overflow-hidden rounded-full bg-zinc-100 dark:bg-white/10">
+                <div data-testid="progress-allowance" className="h-full rounded-full transition-[width] duration-500 bg-emerald-600 dark:bg-emerald-500" style={{ width: `${usage}%` }} />
               </div>
               <div className="mt-2 flex justify-between text-[11px] text-[#8a9990]"><span>৳0</span><span>{remaining < 0 ? `${fmtMoney(Math.abs(remaining))} over` : `${fmtMoney(remaining)} to go`}</span><span>{fmtMoney(activeIncome)}</span></div>
               <p className="mt-4 flex items-center gap-2 text-xs leading-relaxed text-[#71857a]">
@@ -746,27 +746,27 @@ export default function DailyLedger() {
           </div>
         </section>
 
-        <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6" data-testid="monthly-detail-panel">
+        <section className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm mb-5 rounded-[24px] p-5 sm:p-6" data-testid="monthly-detail-panel">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
             <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Monthly detail</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">{monthLabel(selectedMonth)}</h2></div>
-            <span className="rounded-full bg-[#edf2e9] px-3 py-1 text-xs font-semibold text-[#628675]">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'}</span>
+            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600 dark:bg-emerald-500/10 dark:text-emerald-500 dark:border dark:border-emerald-500/20">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'}</span>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl bg-[#f4f5ef]/80 p-4"><p className="text-xs text-[#819087]">Monthly income</p><p data-testid="text-detail-income" className="mt-1 font-display text-xl font-bold text-[#355a4d]">{fmtMoney(activeIncome)}</p></div>
-            <div className="rounded-2xl bg-[#f4f5ef]/80 p-4"><p className="text-xs text-[#819087]">Total spent</p><p data-testid="text-detail-spent" className="mt-1 font-display text-xl font-bold text-[#355a4d]">{fmtMoney(spent)}</p></div>
-            <div className={`rounded-2xl p-4 ${remaining < 0 ? 'bg-[#fae9e4]' : 'bg-[#e8f0e7]'}`}><p className="text-xs text-[#819087]">{remaining < 0 ? 'Deficit' : 'Savings'}</p><p data-testid="text-detail-savings" className={`mt-1 font-display text-xl font-bold ${remaining < 0 ? 'text-[#b8584b]' : 'text-[#347d68]'}`}>{remaining < 0 ? `−${fmtMoney(Math.abs(remaining))}` : fmtMoney(remaining)}</p></div>
+            <div className="rounded-2xl bg-white shadow-sm border-zinc-100 dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none/80 p-4"><p className="text-xs text-[#819087]">Monthly income</p><p data-testid="text-detail-income" className="mt-1 font-display text-xl font-bold text-zinc-900 dark:text-emerald-500">{fmtMoney(activeIncome)}</p></div>
+            <div className="rounded-2xl bg-white shadow-sm border-zinc-100 dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none/80 p-4"><p className="text-xs text-[#819087]">Total spent</p><p data-testid="text-detail-spent" className="mt-1 font-display text-xl font-bold text-zinc-900 dark:text-emerald-500">{fmtMoney(spent)}</p></div>
+            <div className={`rounded-2xl p-4 ${remaining < 0 ? 'bg-[#fae9e4] dark:bg-[#3a221f]' : 'bg-white dark:bg-[#1C1C1E] border border-zinc-200 dark:border-white/10'}`}><p className="text-xs text-zinc-900 dark:text-[#F5F5F7]">{remaining < 0 ? 'Deficit' : 'Savings'}</p><p data-testid="text-detail-savings" className={`mt-1 font-display text-xl font-bold ${remaining < 0 ? 'text-[#b8584b]' : 'text-emerald-600 dark:text-emerald-500'}`}>{remaining < 0 ? `−${fmtMoney(Math.abs(remaining))}` : fmtMoney(remaining)}</p></div>
           </div>
         </section>
 
         {editModal}
 
-          <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6 w-full">
-            <div className="mb-4 flex items-end justify-between"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The shape of your spending</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Where it went</h2></div><span className="text-xs text-[#8a9990]">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'}</span></div>
+          <section className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm mb-5 rounded-[24px] p-5 sm:p-6 w-full">
+            <div className="mb-4 flex items-end justify-between"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The shape of your spending</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Where it went</h2></div><span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600 dark:bg-emerald-500/10 dark:text-emerald-500 dark:border dark:border-emerald-500/20">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'}</span></div>
             {pieData.length ? <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center w-full">
               <div className="col-span-1 flex justify-center">
                 <div className="relative h-[190px] w-[190px]">
                   <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={pieData} dataKey="value" nameKey="name" innerRadius={58} outerRadius={82} paddingAngle={3} stroke="none" cornerRadius={4}>{pieData.map((entry) => <Cell key={entry.name} fill={colorForCategory(entry.name, categories)} />)}</Pie><ChartTooltip content={chartTip} /></PieChart></ResponsiveContainer>
-                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"><strong data-testid="text-category-spend-total" className="font-display text-[19px] font-bold text-[#315548]">{fmtMoney(spent)}</strong><span className="text-[10px] text-[#8a9990]">total spent</span></div>
+                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"><strong data-testid="text-category-spend-total" className="font-display text-[19px] font-bold text-[#315548] dark:text-emerald-500">{fmtMoney(spent)}</strong><span className="text-[10px] text-[#8a9990]">total spent</span></div>
                 </div>
               </div>
               <div className="col-span-1 w-full space-y-3">
@@ -777,7 +777,7 @@ export default function DailyLedger() {
                       {colorPickerTarget === `pie-${item.name}` && (
                         <>
                           <div className="fixed inset-0 z-40" onClick={() => setColorPickerTarget(null)} />
-                          <div className="absolute top-full left-0 mt-2 z-50 w-48 rounded-xl bg-white p-3 shadow-xl border border-[#dce5dc]">
+                          <div className="absolute top-full left-0 mt-2 z-50 w-48 rounded-xl bg-white p-3 shadow-xl border border-zinc-200">
                              <div className="flex flex-wrap gap-2 mb-3">
                                {PREDEFINED_COLORS.map(c => (
                                  <motion.button {...bounce} type="button" aria-label={`Select color ${c}`} key={c} onClick={() => { changeCategoryColor(item.name, c); setColorPickerTarget(null); }} className="h-6 w-6 rounded-full hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: c }} />
@@ -792,21 +792,21 @@ export default function DailyLedger() {
                       )}
                       <span className="truncate text-xs text-[#62796d]">{item.name}</span>
                     </div>
-                    <span data-testid={`text-donut-amount-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="shrink-0 text-xs font-semibold text-[#355a4d]">{fmtMoney(item.value)}</span>
+                    <span data-testid={`text-donut-amount-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="shrink-0 text-xs font-semibold text-[#355a4d] dark:text-emerald-500">{fmtMoney(item.value)}</span>
                   </div>
                 ))}
               </div>
-            </div> : <div className="flex min-h-[190px] flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/70 text-center"><div className="mb-3 grid h-11 w-11 place-items-center rounded-full bg-[#e7eee4] text-[#668b75]"><Wallet size={19} /></div><p className="text-sm font-semibold text-[#547165]">Nothing spent just yet</p><p className="mt-1 max-w-[220px] text-xs leading-relaxed text-[#8a9990]">Your categories will take shape here as you add expenses.</p></div>}
+            </div> : <div className="flex min-h-[190px] flex-col items-center justify-center rounded-2xl bg-zinc-100/50 dark:bg-[#1C1C1E] dark:border dark:border-white/10 text-center"><div className="mb-3 grid h-11 w-11 place-items-center rounded-full bg-[#e7eee4] text-[#668b75]"><Wallet size={19} /></div><p className="text-sm font-semibold text-[#547165]">Nothing spent just yet</p><p className="mt-1 max-w-[220px] text-xs leading-relaxed text-[#8a9990]">Your categories will take shape here as you add expenses.</p></div>}
           </section>
 
-        <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6">
+        <section className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm mb-5 rounded-[24px] p-5 sm:p-6">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">One day at a time</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Daily rhythm</h2></div><div className="flex items-center gap-2 text-[11px] text-[#7e9287]"><span className="h-2 w-2 rounded-full bg-[#4d9275]" />Daily spend · BDT</div></div>
           <div className="h-[205px] w-full">
-            {monthExpenses.length ? <ResponsiveContainer width="100%" height="100%"><AreaChart data={trendData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}><defs><linearGradient id="spendFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#559778" stopOpacity={.25} /><stop offset="100%" stopColor="#559778" stopOpacity={.015} /></linearGradient></defs><CartesianGrid vertical={false} stroke="#e8ede5" strokeDasharray="3 5" /><XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#87968c' }} interval={Math.max(0, Math.floor(daysInMonth / 9) - 1)} tickFormatter={(value) => `${value}`} /><YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#87968c' }} width={52} tickFormatter={(value) => value >= 1000 ? `৳${(value / 1000).toFixed(value % 1000 ? 1 : 0)}k` : `৳${value}`} /><ChartTooltip content={chartTip} /><Area type="monotone" dataKey="amount" stroke="#4d9275" strokeWidth={2.5} fill="url(#spendFill)" activeDot={{ r: 4, fill: '#4d9275', stroke: '#f9f8f1', strokeWidth: 2 }} /></AreaChart></ResponsiveContainer> : <div className="flex h-full flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/70"><p className="text-sm font-semibold text-[#547165]">Your rhythm will appear here</p><p className="mt-1 text-xs text-[#8a9990]">Log a few days of spending to see the pattern.</p></div>}
+            {monthExpenses.length ? <ResponsiveContainer width="100%" height="100%"><AreaChart data={trendData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}><defs><linearGradient id="spendFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#559778" stopOpacity={.25} /><stop offset="100%" stopColor="#559778" stopOpacity={.015} /></linearGradient></defs><CartesianGrid vertical={false} stroke="#e8ede5" strokeDasharray="3 5" /><XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#87968c' }} interval={Math.max(0, Math.floor(daysInMonth / 9) - 1)} tickFormatter={(value) => `${value}`} /><YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#87968c' }} width={52} tickFormatter={(value) => value >= 1000 ? `৳${(value / 1000).toFixed(value % 1000 ? 1 : 0)}k` : `৳${value}`} /><ChartTooltip content={chartTip} /><Area type="monotone" dataKey="amount" stroke="#4d9275" strokeWidth={2.5} fill="url(#spendFill)" activeDot={{ r: 4, fill: '#4d9275', stroke: '#f9f8f1', strokeWidth: 2 }} /></AreaChart></ResponsiveContainer> : <div className="flex h-full flex-col items-center justify-center rounded-2xl bg-zinc-100/50 dark:bg-[#1C1C1E] dark:border dark:border-white/10"><p className="text-sm font-semibold text-[#547165]">Your rhythm will appear here</p><p className="mt-1 text-xs text-[#8a9990]">Log a few days of spending to see the pattern.</p></div>}
           </div>
         </section>
 
-        <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6">
+        <section className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm mb-5 rounded-[24px] p-5 sm:p-6">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Follow the little labels</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Top spending tags</h2></div><p className="text-[11px] text-[#87968c]">An expense with multiple tags appears under each one.</p></div>
           {tagData.length ? <div className="grid items-center gap-4 md:grid-cols-[1.25fr_.75fr]">
             <div className="h-[230px] w-full">
@@ -821,123 +821,123 @@ export default function DailyLedger() {
               </ResponsiveContainer>
             </div>
             <div className="space-y-2">
-              {tagData.map((item) => <div key={item.tag} data-testid={`row-tag-total-${item.tag.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="flex items-center justify-between gap-3 rounded-xl bg-[#f4f5ef]/75 px-3 py-2">
-                <span className="truncate text-xs font-medium text-[#62796d]">#{item.tag}</span><span className="shrink-0 text-xs font-semibold text-[#355a4d]">{fmtMoney(item.value)}</span>
+              {tagData.map((item) => <div key={item.tag} data-testid={`row-tag-total-${item.tag.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="flex items-center justify-between gap-3 rounded-xl bg-white shadow-sm border-zinc-100 dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none/75 px-3 py-2">
+                <span className="truncate text-xs font-medium text-[#62796d]">#{item.tag}</span><span className="shrink-0 text-xs font-semibold text-[#355a4d] dark:text-emerald-500">{fmtMoney(item.value)}</span>
               </div>)}
             </div>
-          </div> : <div className="flex min-h-[115px] flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/70 text-center">
+          </div> : <div className="flex min-h-[115px] flex-col items-center justify-center rounded-2xl bg-zinc-100/50 dark:bg-[#1C1C1E] dark:border dark:border-white/10 text-center">
             <p className="text-sm font-semibold text-[#547165]">No tags in {monthLabel(selectedMonth)} yet</p>
             <p className="mt-1 text-xs text-[#8a9990]">Add tags to an expense to see the breakdown.</p>
           </div>}
         </section>
 
-        <section className="glass-card mb-5 rounded-[24px] p-5 sm:p-6">
+        <section className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm mb-5 rounded-[24px] p-5 sm:p-6">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">A gentle check-in</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Category budgets</h2></div><p className="text-xs text-[#87968c]">Adjust any amount to suit your month</p></div>
           <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
             {categoryTotals.map((item) => {
               const ratio = item.budget > 0 ? item.spent / item.budget : item.spent > 0 ? 1 : 0;
-              const barColor = ratio >= 1 ? '#c66655' : ratio >= .75 ? '#d4aa46' : '#62a07b';
-              return <div key={item.name} className="group rounded-2xl border border-[#e4e9e1] bg-[#fffdf8]/45 p-4" data-testid={`budget-row-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+
+              return <div key={item.name} className="group bg-white border border-zinc-100 dark:bg-[#1C1C1E] dark:border-white/10 rounded-2xl p-4" data-testid={`budget-row-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
                 <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 relative">
                       <span className="h-3 w-3 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: colorForCategory(item.name, categories) }} />
-                      <div className="truncate text-sm font-semibold text-[#416356]">{item.name}</div>
+                      <div className="truncate text-sm font-semibold text-zinc-900 dark:text-[#F5F5F7]">{item.name}</div>
                       <div className="flex gap-1 opacity-60 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <motion.button {...bounce} type="button" aria-label={`Edit ${item.name}`} onClick={() => { setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); setEditingCategoryColor(colorForCategory(item.name, categories)); setEditingCategoryBudget(item.budget.toString()); }} className="rounded-full p-2 text-[#789086] transition-colors hover:bg-[#edf2e9] hover:text-[#347d68]"><Edit3 size={14} /></motion.button>
+                        <motion.button {...bounce} type="button" aria-label={`Edit ${item.name}`} onClick={() => { setEditingCategoryTarget(item.name); setEditingCategoryName(item.name); setEditingCategoryColor(colorForCategory(item.name, categories)); setEditingCategoryBudget(item.budget.toString()); }} className="rounded-full p-2 text-[#789086] transition-colors hover:bg-[#edf2e9] hover:text-emerald-600 dark:text-emerald-500"><Edit3 size={14} /></motion.button>
                         <motion.button {...bounce} type="button" aria-label={`Delete ${item.name}`} onClick={() => setCategoryToDelete(item.name)} className="rounded-full p-2 text-[#a88e87] transition-colors hover:bg-[#fae9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></motion.button>
                       </div>
                     </div>
-                    <div className="mt-1 text-[11px] text-[#87968c]">{item.budget === 0 && item.spent === 0 ? 'No budget set' : item.budget === 0 ? `${fmtMoney(item.spent)} spent · no budget` : `${fmtMoney(item.spent)} spent`}</div>
+                    <div className="mt-1 text-[11px] text-zinc-500 dark:text-[#86868B]">{item.budget === 0 && item.spent === 0 ? 'No budget set' : item.budget === 0 ? `${fmtMoney(item.spent)} spent · no budget` : `${fmtMoney(item.spent)} spent`}</div>
                   </div>
-                  <label className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#f0f2eb] px-2 py-1.5 text-[11px] text-[#87968c]"><span>Budget</span><span className="font-semibold text-[#547165]">৳</span><input aria-label={`${item.name} monthly budget in BDT`} data-testid={`input-budget-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} type="number" min="0" step="50" value={item.budget.toString()} onChange={(event) => changeBudget(item.name, event.target.value)} onKeyDown={(e) => { if (['-', '+', 'e', 'E', '.'].includes(e.key)) e.preventDefault(); }} onBlur={(e) => { e.target.value = item.budget.toString(); }} className="w-[80px] bg-transparent text-right text-xs font-semibold text-[#416356] outline-none" /></label>
+                  <label className="flex shrink-0 items-center gap-1.5 rounded-lg bg-zinc-100 dark:bg-white/5 px-2 py-1.5 text-[11px] text-zinc-500 dark:text-[#86868B]"><span>Budget</span><span className="font-semibold text-[#547165]">৳</span><input aria-label={`${item.name} monthly budget in BDT`} data-testid={`input-budget-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} type="number" min="0" step="50" value={item.budget.toString()} onChange={(event) => changeBudget(item.name, event.target.value)} onKeyDown={(e) => { if (['-', '+', 'e', 'E', '.'].includes(e.key)) e.preventDefault(); }} onBlur={(e) => { e.target.value = item.budget.toString(); }} className="w-[80px] bg-transparent text-right text-xs font-semibold text-zinc-900 dark:text-[#F5F5F7] outline-none" /></label>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-[#e8ece4]"><div data-testid={`progress-budget-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="h-full rounded-full transition-[width] duration-500" style={{ width: `${item.budget > 0 ? Math.min(100, ratio * 100) : item.spent > 0 ? 100 : 0}%`, backgroundColor: barColor }} /></div>
+                <div className="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-white/10"><div data-testid={`progress-budget-${item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="h-full rounded-full transition-[width] duration-500" style={{ width: `${item.budget > 0 ? Math.min(100, ratio * 100) : item.spent > 0 ? 100 : 0}%`, backgroundColor: '#059669' }} /></div>
                 <div className="mt-2 flex justify-between text-[10px] text-[#91a096]"><span>{item.budget > 0 ? `${Math.round(ratio * 100)}% of budget` : 'Spending tracked'}</span><span>{item.budget > 0 ? `${fmtMoney(Math.max(item.budget - item.spent, 0))} left` : 'Set budget above'}</span></div>
               </div>;
             })}
           </div>
         </section>
 
-        <section className="glass-card rounded-[24px] p-5 sm:p-6">
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The little details</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Your ledger</h2></div><motion.button {...bounce} type="button" onClick={exportCsv} data-testid="button-export-csv" className="flex h-9 items-center gap-2 rounded-xl border border-[#dce5dc] bg-[#fffdf8]/70 px-3 text-xs font-semibold text-[#537364] hover:bg-[#edf2e9]"><Download size={14} />Download CSV</motion.button></div>
+        <section className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm rounded-[24px] p-5 sm:p-6">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">The little details</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Your ledger</h2></div><motion.button {...bounce} type="button" onClick={exportCsv} data-testid="button-export-csv" className="flex h-9 items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50/70 px-3 text-xs font-semibold text-[#537364] hover:bg-[#edf2e9]"><Download size={14} />Download CSV</motion.button></div>
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
-            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by category</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by category" data-testid="select-filter-category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent"><option value="all">All categories</option>{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
-            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by tag</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by tag" data-testid="select-filter-tag" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="h-10 w-full rounded-xl border border-[#dce5dc] bg-[#fffdf8]/75 px-3 text-xs text-[#4d6c5e] appearance-none pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent"><option value="all">All tags</option>{availableTags.map((item) => <option key={item} value={item}>#{item}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
+            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by category</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by category" data-testid="select-filter-category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50/75 dark:bg-[#09090b] px-3 text-xs text-zinc-900 dark:text-[#F5F5F7] appearance-none dark:border-white/10 pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent"><option value="all">All categories</option>{categories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
+            <label className="block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Filter by tag</span><span className="relative block"><motion.select {...bounce} aria-label="Filter expenses by tag" data-testid="select-filter-tag" value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50/75 dark:bg-[#09090b] px-3 text-xs text-zinc-900 dark:text-[#F5F5F7] appearance-none dark:border-white/10 pr-10 cursor-pointer transition-colors focus:outline-none focus:ring-0 focus:border-transparent"><option value="all">All tags</option>{availableTags.map((item) => <option key={item} value={item}>#{item}</option>)}</motion.select><ChevronDown size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#82958a]" /></span></label>
           </div>
           {monthExpenses.length ? filteredExpenses.length ? <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-left">
               <thead><tr className="border-b border-[#e6ebe3] text-[10px] font-semibold uppercase tracking-[.1em] text-[#95a198]"><th className="pb-3 pr-3 font-semibold">Date</th><th className="pb-3 pr-3 font-semibold">Category</th><th className="pb-3 pr-3 font-semibold">Tags</th><th className="pb-3 pr-3 font-semibold">Note</th><th className="pb-3 pr-3 text-right font-semibold">Amount</th><th className="pb-3 text-right font-semibold">Edit</th></tr></thead>
-              <tbody>{filteredExpenses.map((item) => <tr key={item.id} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] last:border-0 hover:bg-gray-50">
+              <tbody>{filteredExpenses.map((item) => <tr key={item.id} data-testid={`row-expense-${item.id}`} className="group border-b border-[#edf0e9] dark:border-[#2a3c35] last:border-0 hover:bg-gray-50 dark:hover:bg-white/5">
                 <td data-testid={`text-expense-date-${item.id}`} className="py-3.5 pr-3 text-xs text-[#74877d]">{new Date(`${item.date}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td>
-                <td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-[#4d6c5e]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td>
+                <td className="py-3.5 pr-3"><span className="inline-flex items-center gap-2 text-xs font-medium text-zinc-900"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorForCategory(item.category, categories) }} />{item.category}</span></td>
                 <td data-testid={`text-expense-tags-${item.id}`} className="py-3.5 pr-3"><div className="flex max-w-[170px] flex-wrap gap-1">{item.tags.map((tag) => <span key={tag} className="rounded-md bg-[#edf2e9] px-1.5 py-1 text-[10px] text-[#628675]">#{tag}</span>)}</div></td>
                 <td data-testid={`text-expense-note-${item.id}`} className="max-w-[180px] truncate py-3.5 pr-3 text-xs text-[#93a097]">{item.note || '—'}</td>
-                <td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d]">{fmtMoney(item.amount)}</td>
-                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><motion.button whileTap={{ scale: 0.9 }} transition={springTransition} type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="rounded-full p-2 text-[#789086] opacity-75 transition-colors hover:bg-[#e9f0e8] hover:text-[#347d68]"><Edit3 size={14} /></motion.button><motion.button whileTap={{ scale: 0.9 }} transition={springTransition} type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => setExpenseToDelete(item.id)} className="rounded-full p-2 text-[#a88e87] opacity-75 transition-colors hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></motion.button></div></td>
+                <td data-testid={`text-expense-amount-${item.id}`} className="py-3.5 pr-3 text-right text-sm font-semibold text-[#355a4d] dark:text-emerald-500">{fmtMoney(item.amount)}</td>
+                <td className="py-3.5 text-right"><div className="flex justify-end gap-1"><motion.button whileTap={{ scale: 0.9 }} transition={springTransition} type="button" aria-label={`Edit ${item.category} expense`} data-testid={`button-edit-expense-${item.id}`} onClick={() => startEdit(item)} className="rounded-full p-2 text-[#789086] opacity-75 transition-colors hover:bg-[#e9f0e8] hover:text-emerald-600 dark:text-emerald-500"><Edit3 size={14} /></motion.button><motion.button whileTap={{ scale: 0.9 }} transition={springTransition} type="button" aria-label={`Delete ${item.category} expense`} data-testid={`button-delete-expense-${item.id}`} onClick={() => setExpenseToDelete(item.id)} className="rounded-full p-2 text-[#a88e87] opacity-75 transition-colors hover:bg-[#f8e9e4] hover:text-[#ba5b4d]"><Trash2 size={14} /></motion.button></div></td>
               </tr>)}</tbody>
             </table>
-          </div> : <div className="rounded-2xl bg-[#f4f4ec]/65 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165]">No expenses match those filters</p><p className="mt-1 text-xs text-[#8a9990]">Try another category or tag.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/65 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
+          </div> : <div className="rounded-2xl bg-zinc-100/50 dark:bg-[#1C1C1E] dark:border dark:border-white/10 px-5 py-8 text-center"><p data-testid="text-no-filter-results" className="text-sm font-semibold text-[#547165]">No expenses match those filters</p><p className="mt-1 text-xs text-[#8a9990]">Try another category or tag.</p></div> : <div className="flex flex-col items-center justify-center rounded-2xl bg-zinc-100/50 dark:bg-[#1C1C1E] dark:border dark:border-white/10 px-5 py-10 text-center"><div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-[#e6eee4] text-[#638b73]"><CalendarDays size={19} /></div><p data-testid="text-empty-ledger" className="font-display text-base font-bold text-[#4a6c5c]">Your page is still blank</p><p className="mt-1 max-w-[270px] text-xs leading-relaxed text-[#87968c]">{monthExpenses.length === 0 && expenses.length ? `No entries in ${monthLabel(selectedMonth)}. Pick another month or start a fresh note.` : 'When you spend, leave yourself a little note here. It all stays on this device.'}</p></div>}
           <div className="mt-4 flex items-center justify-between border-t border-[#e6ebe3] pt-4 text-xs"><span className="text-[#839289]">{monthExpenses.length} {monthExpenses.length === 1 ? 'entry' : 'entries'} in {monthLabel(selectedMonth)}</span><span className="font-semibold text-[#426457]">Month total <strong data-testid="text-ledger-total" className="ml-2 font-display text-sm">{fmtMoney(spent)}</strong></span></div>
         </section>
         </> : <>
           <section className="mb-5 grid gap-4 md:grid-cols-3" data-testid="yearly-insight-cards">
-            <article className="glass-card rounded-[24px] p-5 sm:p-6">
+            <article className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm rounded-[24px] p-5 sm:p-6">
               <p className="text-xs font-semibold uppercase tracking-[.1em] text-[#9a8c77]">Highest spending month</p>
-              {peakMonth ? <div className="mt-3"><p data-testid="text-peak-month" className="font-display text-xl font-bold text-[#294d40]">{peakMonth.label}</p><p className="mt-1 text-sm font-semibold text-[#d78967]">{fmtMoney(peakMonth.spent)}</p></div> : <p className="mt-3 text-sm text-[#87968c]">No recorded months yet</p>}
+              {peakMonth ? <div className="mt-3"><p data-testid="text-peak-month" className="font-display text-xl font-bold text-[#294d40]">{peakMonth.label}</p><p className="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-500">{fmtMoney(peakMonth.spent)}</p></div> : <p className="mt-3 text-sm text-[#87968c]">No recorded months yet</p>}
             </article>
-            <article className="glass-card rounded-[24px] p-5 sm:p-6">
+            <article className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm rounded-[24px] p-5 sm:p-6">
               <p className="text-xs font-semibold uppercase tracking-[.1em] text-[#9a8c77]">{selectedYear === Number(today.slice(0, 4)) ? 'Total spent year-to-date' : `Total spent in ${selectedYear}`}</p>
-              <p data-testid="text-year-total" className="mt-3 font-display text-2xl font-bold text-[#294d40]">{fmtMoney(yearTotal)}</p>
+              <p data-testid="text-year-total" className="mt-3 font-display text-2xl font-bold text-zinc-900 dark:text-emerald-500">{fmtMoney(yearTotal)}</p>
               <p className="mt-1 text-xs text-[#87968c]">{yearlyMonthData.length} active {yearlyMonthData.length === 1 ? 'month' : 'months'}</p>
             </article>
-            <article className="glass-card rounded-[24px] p-5 sm:p-6">
+            <article className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm rounded-[24px] p-5 sm:p-6">
               <p className="text-xs font-semibold uppercase tracking-[.1em] text-[#9a8c77]">Monthly average spend</p>
-              <p data-testid="text-year-average" className="mt-3 font-display text-2xl font-bold text-[#294d40]">{fmtMoney(monthlyAverage)}</p>
+              <p data-testid="text-year-average" className="mt-3 font-display text-2xl font-bold text-zinc-900 dark:text-emerald-500">{fmtMoney(monthlyAverage)}</p>
               <p className="mt-1 text-xs text-[#87968c]">Average across months with expenses</p>
             </article>
           </section>
 
-          <section className="glass-card rounded-[24px] p-5 sm:p-6">
+          <section className="bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm rounded-[24px] p-5 sm:p-6">
             <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
               <div><p className="mb-1 text-xs font-semibold uppercase tracking-[.12em] text-[#9a8c77]">Income and spending</p><h2 className="font-display text-[21px] font-bold tracking-[-.04em] text-[#294d40]">Monthly comparison · {selectedYear}</h2></div>
               <span className="text-xs text-[#87968c]">Only months with recorded expenses</span>
             </div>
-            {yearlyMonthData.length ? <div className="h-[330px] w-full" data-testid="yearly-comparison-chart">
+            {yearlyMonthData.length ? <div className="h-[330px] w-full bg-transparent" data-testid="yearly-comparison-chart">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={yearlyMonthData} margin={{ top: 12, right: 12, left: 4, bottom: 4 }}>
                   <CartesianGrid vertical={false} stroke="#e8ede5" strokeDasharray="3 5" />
                   <XAxis dataKey="shortLabel" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#87968c' }} />
                   <YAxis tickLine={false} axisLine={false} width={56} tick={{ fontSize: 10, fill: '#87968c' }} tickFormatter={(value) => value >= 1000 ? `৳${(value / 1000).toFixed(value % 1000 ? 1 : 0)}k` : `৳${value}`} />
-                  <ChartTooltip content={yearlyChartTip} />
+                  <ChartTooltip content={yearlyChartTip} contentStyle={{ backgroundColor: '#1C1C1E', borderColor: 'rgba(255,255,255,0.1)', color: '#F5F5F7', borderRadius: '12px' }} itemStyle={{ color: '#F5F5F7' }} />
                   <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
-                  <Bar dataKey="spent" name="Spent" fill="#559778" radius={[6, 6, 0, 0]} maxBarSize={42} />
-                  <Bar dataKey="income" name="Monthly income" fill="#d4ad48" radius={[6, 6, 0, 0]} maxBarSize={42} />
+                  <Bar dataKey="spent" name="Spent" fill="#059669" radius={[6, 6, 0, 0]} maxBarSize={42} />
+                  <Bar dataKey="income" name="Monthly income" fill="#2C2C2E" radius={[6, 6, 0, 0]} maxBarSize={42} />
                 </BarChart>
               </ResponsiveContainer>
-            </div> : <div className="flex min-h-[250px] flex-col items-center justify-center rounded-2xl bg-[#f4f4ec]/70 text-center">
+            </div> : <div className="flex min-h-[250px] flex-col items-center justify-center rounded-2xl bg-zinc-100/50 dark:bg-[#1C1C1E] dark:border dark:border-white/10 text-center">
               <BarChart3 size={22} className="mb-3 text-[#668b75]" />
               <p className="text-sm font-semibold text-[#547165]">No recorded spending in {selectedYear}</p>
               <p className="mt-1 text-xs text-[#8a9990]">Add an expense in the Monthly Ledger to start this year’s analytics.</p>
             </div>}
           </section>
         </>}
-        <footer className="flex items-center justify-center gap-2 py-7 text-[11px] text-[#93a097]"><span>Just for you</span><span className="h-1 w-1 rounded-full bg-[#d78967]" /><span>Your numbers never leave this device</span></footer>
+        <footer className="flex items-center justify-center gap-2 py-7 text-[11px] text-[#93a097]"><span>Just for you</span><span className="h-1 w-1 rounded-full bg-emerald-600" /><span>Your numbers never leave this device</span></footer>
       </div>
       
       <AnimatePresence>{editingCategoryTarget && (
         <div key="modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <motion.div {...overlayFade} className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setEditingCategoryTarget(null)}></motion.div>
-          <motion.form {...modalPop} onSubmit={(e) => requireAuth(e, () => saveCategoryEdit())} className="relative glass-card max-w-md w-full rounded-[28px] border border-white/80 p-6 sm:p-8 bg-white/95 max-h-[90vh] overflow-y-auto z-10 shadow-2xl">
+          <motion.form {...modalPop} onSubmit={(e) => requireAuth(e, () => saveCategoryEdit())} className="relative bg-white border border-zinc-200 dark:bg-[#0a0a0a] dark:border-white/10 shadow-sm max-w-md w-full rounded-[28px] border border-white/80 p-6 sm:p-8 bg-white dark:bg-[#0a0a0a] max-h-[90vh] overflow-y-auto z-10 shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
               <h3 className="font-display text-xl font-bold text-[#294d40]">Edit category</h3>
-              <motion.button {...bounce} type="button" aria-label="Close" onClick={() => setEditingCategoryTarget(null)} className="grid h-8 w-8 place-items-center rounded-full bg-[#f4f5ef] text-[#627a6d] hover:bg-[#e8ebe3]"><X size={16} /></motion.button>
+              <motion.button {...bounce} type="button" aria-label="Close" onClick={() => setEditingCategoryTarget(null)} className="grid h-8 w-8 place-items-center rounded-full bg-white shadow-sm border-zinc-100 dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none text-[#627a6d] hover:bg-[#e8ebe3]"><X size={16} /></motion.button>
             </div>
             <label className="mb-4 block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Name</span>
-              <input autoFocus aria-label="Category name" value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3 text-sm text-[#416356] focus:outline-none focus:ring-0 focus:border-transparent" />
+              <input autoFocus aria-label="Category name" value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-[#416356] focus:outline-none focus:ring-0 focus:border-transparent" />
             </label>
             <label className="mb-4 block"><span className="mb-1.5 block text-[11px] font-semibold text-[#819087]">Monthly budget (৳)</span>
-              <input aria-label="Category budget" type="number" min="0" step="50" value={editingCategoryBudget} onChange={(e) => setEditingCategoryBudget(e.target.value)} onKeyDown={(e) => { if (['-', '+', 'e', 'E', '.'].includes(e.key)) e.preventDefault(); }} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3 text-sm text-[#416356] focus:outline-none focus:ring-0 focus:border-transparent" />
+              <input aria-label="Category budget" type="number" min="0" step="50" value={editingCategoryBudget} onChange={(e) => setEditingCategoryBudget(e.target.value)} onKeyDown={(e) => { if (['-', '+', 'e', 'E', '.'].includes(e.key)) e.preventDefault(); }} className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-[#416356] focus:outline-none focus:ring-0 focus:border-transparent" />
             </label>
             <div className="mb-6"><span className="mb-2 block text-[11px] font-semibold text-[#819087]">Color</span>
               <div className="flex flex-wrap items-center gap-2">
@@ -948,8 +948,8 @@ export default function DailyLedger() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <motion.button {...bounce} type="button" onClick={() => setEditingCategoryTarget(null)} className="flex-1 rounded-xl bg-[#f4f5ef] py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</motion.button>
-              <motion.button {...bounce} type="submit" className="flex-1 rounded-xl bg-[#347d68] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#2b6857] transition">Save changes</motion.button>
+              <motion.button {...bounce} type="button" onClick={() => setEditingCategoryTarget(null)} className="flex-1 rounded-xl bg-white shadow-sm border-zinc-100 dark:bg-[#1C1C1E] dark:border-white/10 dark:shadow-none py-3 text-sm font-semibold text-[#627a6d] hover:bg-[#e8ebe3] transition">Cancel</motion.button>
+              <motion.button {...bounce} type="submit" className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#2b6857] transition">Save changes</motion.button>
             </div>
           </motion.form>
         </div>

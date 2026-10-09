@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Check } from 'lucide-react';
-
+import { ChevronDown, Check, Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const handleGetStarted = () => {
@@ -26,13 +27,13 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#0e1116] text-white font-sans selection:bg-[#d78967]/30">
+    <div className="min-h-[100dvh] w-full bg-[#F5F5F7] dark:bg-black text-white font-sans selection:bg-emerald-600/30">
       {/* 1. Glassmorphism Navigation Bar */}
-      <nav className="sticky top-0 z-50 w-full backdrop-blur-md bg-[#0e1116]/80 border-b border-white/10">
+      <nav className="sticky top-0 z-50 w-full backdrop-blur-md bg-[#F5F5F7] dark:bg-black/80 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           {/* Logo */}
           <div className="font-display text-xl font-bold tracking-tight">
-            little ledger<span className="text-[#d78967]">.</span>
+            little ledger<span className="text-emerald-600 dark:text-emerald-500">.</span>
           </div>
           
           {/* Center Links (Hidden on mobile) */}
@@ -44,10 +45,17 @@ export default function LandingPage() {
 
           {/* Right CTA */}
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="grid h-9 w-9 place-items-center rounded-full border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#1a2622] text-zinc-600 dark:text-[#88a096] hover:bg-zinc-50 dark:hover:bg-[#2a3c35] transition shadow-sm"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
             <button onClick={handleGetStarted} className="text-sm font-medium text-slate-300 hover:text-white transition-colors hidden sm:block">
               Login
             </button>
-            <button onClick={handleGetStarted} className="text-sm font-semibold bg-[#d78967] text-white px-5 py-2 rounded-full hover:bg-[#c2795a] transition-colors">
+            <button onClick={handleGetStarted} className="text-sm font-semibold bg-emerald-600 text-white px-5 py-2 rounded-full hover:bg-emerald-700 transition-colors">
               Get Started
             </button>
           </div>
@@ -67,7 +75,7 @@ export default function LandingPage() {
             Move away from complex spreadsheets and stressful budgeting. 
             Track your daily spending, manage loans, and see your financial health at a glance.
           </p>
-          <button onClick={handleGetStarted} className="text-lg font-bold bg-[#d78967] text-white px-8 py-4 rounded-full hover:bg-[#c2795a] hover:scale-105 transition-all duration-300 shadow-xl shadow-[#d78967]/20">
+          <button onClick={handleGetStarted} className="text-lg font-bold bg-emerald-600 text-white px-8 py-4 rounded-full hover:bg-emerald-700 hover:scale-105 transition-all duration-300 shadow-xl shadow-[#d78967]/20">
             Launch Application
           </button>
 
@@ -76,7 +84,7 @@ export default function LandingPage() {
             <div className="w-full aspect-[16/9] md:aspect-[21/9] bg-slate-800/50 rounded-2xl border border-white/5 flex items-center justify-center overflow-hidden relative">
                <div className="absolute inset-0 bg-gradient-to-br from-[#d78967]/10 to-transparent" />
                <div className="text-slate-500 font-medium flex items-center gap-3">
-                 <span className="w-3 h-3 rounded-full bg-[#d78967] animate-pulse" />
+                 <span className="w-3 h-3 rounded-full bg-emerald-600 animate-pulse" />
                  Day at a Glance UI
                </div>
             </div>
@@ -152,7 +160,7 @@ export default function LandingPage() {
               <ul className="space-y-4 mb-8 flex-1">
                 {['Basic daily ledger', 'Up to 5 custom categories', 'Monthly overview', 'Local storage only'].map((feature, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm text-slate-300">
-                    <Check size={16} className="text-[#d78967] shrink-0" />
+                    <Check size={16} className="text-emerald-600 dark:text-emerald-500 shrink-0" />
                     {feature}
                   </li>
                 ))}
@@ -164,7 +172,7 @@ export default function LandingPage() {
 
             {/* Pro Tier */}
             <div className="bg-white/5 border border-[#d78967]/50 rounded-3xl p-8 flex flex-col relative shadow-[0_0_40px_-15px_rgba(215,137,103,0.3)]">
-              <div className="absolute top-0 right-8 -translate-y-1/2 bg-[#d78967] text-white text-xs font-bold px-3 py-1 rounded-full">
+              <div className="absolute top-0 right-8 -translate-y-1/2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full">
                 MOST POPULAR
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Pro</h3>
@@ -173,12 +181,12 @@ export default function LandingPage() {
               <ul className="space-y-4 mb-8 flex-1">
                 {['Everything in Free', 'Unlimited categories', 'Integrated Loan Tracker', 'Advanced yearly analytics', 'Cloud backup & sync'].map((feature, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm text-slate-300">
-                    <Check size={16} className="text-[#d78967] shrink-0" />
+                    <Check size={16} className="text-emerald-600 dark:text-emerald-500 shrink-0" />
                     {feature}
                   </li>
                 ))}
               </ul>
-              <button onClick={handleGetStarted} className="w-full py-3 rounded-xl font-semibold bg-[#d78967] text-white hover:bg-[#c2795a] transition-colors shadow-lg shadow-[#d78967]/20">
+              <button onClick={handleGetStarted} className="w-full py-3 rounded-xl font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-lg shadow-[#d78967]/20">
                 Get Pro
               </button>
             </div>
@@ -191,7 +199,7 @@ export default function LandingPage() {
               <ul className="space-y-4 mb-8 flex-1">
                 {['Everything in Pro', 'One-time payment', 'Early access to features', 'Priority support'].map((feature, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm text-slate-300">
-                    <Check size={16} className="text-[#d78967] shrink-0" />
+                    <Check size={16} className="text-emerald-600 dark:text-emerald-500 shrink-0" />
                     {feature}
                   </li>
                 ))}
@@ -238,7 +246,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto flex flex-col gap-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="font-display text-xl font-bold tracking-tight">
-              little ledger<span className="text-[#d78967]">.</span>
+              little ledger<span className="text-emerald-600 dark:text-emerald-500">.</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-slate-400">
               <a href="#" className="hover:text-white transition-colors">Privacy</a>

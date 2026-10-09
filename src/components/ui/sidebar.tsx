@@ -17,7 +17,7 @@ export function Sidebar() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed left-6 top-6 z-50 grid h-11 w-11 place-items-center rounded-full bg-white/50 backdrop-blur shadow-sm border border-[#dce5dc] dark:border-[#384f46] text-[#347d68] hover:bg-white dark:hover:bg-[#1a2622] hover:shadow-md transition-all"
+        className="fixed left-6 top-6 z-50 grid h-11 w-11 place-items-center rounded-full bg-white/50 dark:bg-[#141416] backdrop-blur shadow-sm border border-zinc-200 dark:border-white/10 text-emerald-600 dark:text-emerald-500 hover:bg-white dark:hover:bg-white/5 hover:shadow-md transition-all"
         aria-label="Open menu"
       >
         <Menu size={20} strokeWidth={2} />
@@ -45,11 +45,11 @@ export function Sidebar() {
             >
               <div className="flex items-center justify-between mb-10">
                 <div className="font-display text-[19px] font-extrabold tracking-[-.045em] text-[#24483c] dark:text-[#e4e9e7]">
-                  little ledger<span className="text-[#d78967]">.</span>
+                  little ledger<span className="text-emerald-600 dark:text-emerald-500">.</span>
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="grid h-10 w-10 place-items-center rounded-full text-[#768980] dark:text-[#88a096] hover:bg-[#edf1e8] dark:hover:bg-[#344a42] dark:bg-[#253630] hover:text-[#347d68] transition-colors"
+                  className="grid h-10 w-10 place-items-center rounded-full text-[#768980] dark:text-[#88a096] hover:bg-[#edf1e8] dark:hover:bg-[#344a42] dark:bg-[#253630] hover:text-emerald-600 dark:text-emerald-500 transition-colors"
                   aria-label="Close menu"
                 >
                   <X size={20} />
@@ -68,7 +68,7 @@ export function Sidebar() {
                       className={cn(
                         "flex items-center gap-3 px-4 py-3.5 rounded-full font-semibold text-sm transition-all group",
                         isActive
-                          ? "bg-[#347d68] text-white shadow-sm"
+                          ? "bg-emerald-600 text-white shadow-sm"
                           : "text-[#597369] dark:text-[#9bb0a6] hover:bg-[#edf2e9] dark:hover:bg-[#344a42] dark:bg-[#253630] hover:text-[#355a4d] dark:text-[#d1dbd6]"
                       )}
                     >

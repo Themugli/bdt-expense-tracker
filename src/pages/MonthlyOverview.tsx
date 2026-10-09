@@ -69,7 +69,7 @@ export default function MonthlyOverview() {
           </p>
           <div className="mt-8">
             <p className="text-sm font-semibold text-[#768980] dark:text-[#88a096] uppercase tracking-wider mb-1">Total Spent</p>
-            <div className="text-[56px] font-bold tracking-tight text-[#24483c] dark:text-[#e4e9e7] leading-none">
+            <div className="text-[56px] font-bold tracking-tight text-[#24483c] dark:text-emerald-500 leading-none">
               ${currentMonthData.total.toFixed(2)}
             </div>
           </div>
@@ -89,7 +89,7 @@ export default function MonthlyOverview() {
                 <div className="flex justify-between items-end mb-2">
                   <span className="font-semibold text-[#24483c] dark:text-[#e4e9e7] text-[15px]">{cat.name}</span>
                   <div className="text-right">
-                    <span className="font-bold text-[#347d68] text-[15px]">${cat.total.toFixed(2)}</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-500 text-[15px]">${cat.total.toFixed(2)}</span>
                     <span className="text-[#93a097] dark:text-[#7b9087] text-xs ml-2 font-medium">({percentage.toFixed(1)}%)</span>
                   </div>
                 </div>

@@ -52,7 +52,7 @@ const PasswordField = ({
       <motion.button {...bounce}
         type="button"
         onClick={onToggle}
-        className="px-3 text-[#87968c] hover:text-[#347d68] transition-colors"
+        className="px-3 text-[#87968c] hover:text-emerald-600 dark:text-emerald-500 transition-colors"
         aria-label={show ? 'Hide password' : 'Show password'}
       >
         {show ? <EyeOffIcon /> : <EyeIcon />}
@@ -191,7 +191,7 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
       <div className="min-h-screen flex items-center justify-center bg-[#f4f4ec] dark:bg-[#121b18] p-4">
         <div className="max-w-md w-full bg-white dark:bg-[#1a2622] p-8 rounded-[24px] shadow-sm border border-[#e6ebe3]">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#e3efe4] text-[#347d68] mb-4">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#e3efe4] text-emerald-600 dark:text-emerald-500 mb-4">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
             </div>
             <h2 className="font-display text-[24px] font-bold text-[#294d40]">Set New Password</h2>
@@ -258,7 +258,7 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
         </div>
 
         {/* Mode toggle */}
-        <div className="flex rounded-2xl border border-[#dce5dc] dark:border-[#384f46] bg-[#ebeee7] p-1 mb-6">
+        <div className="flex rounded-2xl border border-zinc-200 dark:border-white/10 bg-[#ebeee7] p-1 mb-6">
           <motion.button {...bounce} type="button" onClick={() => { setMode('login'); clearForm(); }}
             className={`flex h-10 flex-1 items-center justify-center rounded-xl text-xs font-bold transition ${mode === 'login' ? 'bg-white dark:bg-[#1a2622] text-[#24483c] dark:text-[#e4e9e7] shadow-sm' : 'text-[#7a8d81] hover:text-[#24483c] dark:text-[#e4e9e7]'}`}>
             Sign In
@@ -299,7 +299,7 @@ export function Auth({ onAuthenticated }: { onAuthenticated: () => void }) {
           {mode === 'login' && (
             <div className="text-right -mt-1">
               <motion.button {...bounce} type="button" onClick={() => { setMode('forgot'); clearForm(); }}
-                className="text-xs text-[#559778] hover:text-[#347d68] font-semibold transition-colors">
+                className="text-xs text-[#559778] hover:text-emerald-600 dark:text-emerald-500 font-semibold transition-colors">
                 Forgot password?
               </motion.button>
             </div>
