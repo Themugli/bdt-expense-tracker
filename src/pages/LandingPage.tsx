@@ -3,6 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Check, Sun, Moon, Sparkles, ArrowDownRight, TrendingUp } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { PieChart, Pie, Cell } from 'recharts';
+import { supabase } from '@/lib/supabase';
+
+export const HAS_VISITED_KEY = 'hasVisited';
+/** Prefixes used by useExpenses for device ledgers and cloud caches. */
+const LEDGER_KEY_PREFIXES = ['little-ledger-expenses-usr-', 'little-ledger-cloud-'];
+
+/** Condition B: a hasVisited flag, or any local ledger with at least one transaction. */
+function hasLocalLedgerData(): boolean {
+  try {
+    if (localStorage.getItem(HAS_VISITED_KEY) === 'true') return true;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !LEDGER_KEY_PREFIXES.some((p) => key.startsWith(p))) continue;
+      const parsed: unknown = JSON.parse(localStorage.getItem(key) || 'null');
+      if (Array.isArray(parsed) && parsed.length > 0) return true;
+    }
+  } catch {
+    // Storage unavailable or corrupt entry — treat as a new user.
+  }
+  return false;
+}
 
 const analyticsCategories = [
   { name: 'Food & Dining', value: 48, amount: '৳7,920', color: '#10B981', bulletClass: 'bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.5)]' },
@@ -15,6 +36,37 @@ export default function LandingPage() {
   const { theme, setTheme } = useTheme();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  // Hold rendering until we know whether this is a returning user, so they
+  // never see a flash of the marketing UI before being redirected.
+  const [checkingReturningUser, setCheckingReturningUser] = useState(true);
+
+  // Smart routing: send returning users straight to the dashboard.
+  useEffect(() => {
+    let cancelled = false;
+    const goToDashboard = () => navigate('/daily', { replace: true });
+
+    // Condition B (local/guest) is synchronous — check it first.
+    if (hasLocalLedgerData()) {
+      goToDashboard();
+      return;
+    }
+
+    // Condition A (authenticated): active Supabase session.
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (cancelled) return;
+        if (session) goToDashboard();
+        else setCheckingReturningUser(false);
+      })
+      .catch(() => {
+        if (!cancelled) setCheckingReturningUser(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -24,6 +76,11 @@ export default function LandingPage() {
   }, []);
 
   const handleGetStarted = () => {
+    try {
+      localStorage.setItem(HAS_VISITED_KEY, 'true');
+    } catch {
+      // Ignore storage failures (e.g. private mode); navigation still works.
+    }
     navigate('/daily');
   };
 
@@ -41,6 +98,10 @@ export default function LandingPage() {
       answer: "Absolutely. Our integrated loan tracker allows you to manage both payables and receivables in a dedicated dashboard."
     }
   ];
+
+  if (checkingReturningUser) {
+    return <div className="min-h-[100dvh] w-full bg-[#F5F5F7] dark:bg-black" aria-busy="true" />;
+  }
 
   return (
     <div className="min-h-[100dvh] w-full bg-[#F5F5F7] dark:bg-black text-white font-sans selection:bg-emerald-600/30">
